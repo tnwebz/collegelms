@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  STUDENT
+}
+
+enum BatchStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum ContentType {
+  VIDEO
+  ASSIGNMENT
+  TEST
+}
+
+model users {
+  id              Int       @id @default(autoincrement())
+  email           String?   @unique(map: "ix_users_email") @db.VarChar
+  login_id        String?   @unique @db.VarChar
+  phone_number    String?   @db.VarChar
+  full_name       String?   @db.VarChar
+  hashed_password String?   @db.VarChar
+  role            Role      @default(STUDENT)
+  is_active       Boolean?
+  created_at      DateTime? @db.Timestamp(6)
+  last_login      DateTime? @db.Timestamp(6)
+
+  student_profile student_profiles?
+  staff_profile   staff_profiles?
+
+  challenge_progress challenge_progress[]
+  code_tests         code_tests[]
+  courses            courses[]            @relation("CourseStaff")
+  enrollments        enrollments[]
+  lesson_progress    lesson_progress[]
+  live_sessions      live_sessions[]
+  notifications      notifications[]
+  submissions        submissions[]
+  test_results       test_results[]
+  user_certificates  user_certificates[]
+
+  @@index([id], map: "ix_users_id")
+}
+
+model student_profiles {
+  id               Int     @id @default(autoincrement())
+  user_id          Int     @unique
+  enrollment_year  Int?
+  current_semester Int?
+  branch           String? @db.VarChar
+  users            users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model staff_profiles {
+  id            Int     @id @default(autoincrement())
+  user_id       Int     @unique
+  age           Int?
+  gender        String? @db.VarChar
+  qualification String? @db.VarChar
+  users         users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model courses {
+  id           Int      @id @default(autoincrement())
+  title        String?  @db.VarChar
+  description  String?  @db.VarChar
+  price        Int?
+  image_url    String?  @db.VarChar
+  is_published Boolean?
+  staff_id     Int?
+  course_type  String?  @db.VarChar
+  language     String?  @db.VarChar
+
+  users             users?              @relation("CourseStaff", fields: [staff_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  course_batches    course_batches[]
+  course_challenges course_challenges[]
+  modules           modules[]
+  user_certificates user_certificates[]
+
+  @@index([id], map: "ix_courses_id")
+}
+
+model course_batches {
+  id        Int         @id @default(autoincrement())
+  course_id Int?
+  semester  Int?
+  section   String?     @db.VarChar
+  year      Int?
+  status    BatchStatus @default(ACTIVE)
+
+  courses       courses?        @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  enrollments   enrollments[]
+  batch_content batch_content[]
+}
+
+model enrollments {
+  id              Int       @id @default(autoincrement())
+  student_id      Int?
+  batch_id        Int?
+  enrollment_date DateTime? @default(now()) @db.Timestamp(6)
+  expiry_date     DateTime? @db.Timestamp(6)
+
+  course_batches course_batches? @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  users          users?          @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@index([id], map: "ix_enrollments_id")
+}
+
+model batch_content {
+  id           Int         @id @default(autoincrement())
+  batch_id     Int?
+  type         ContentType @default(VIDEO)
+  title        String?     @db.VarChar
+  content_data String?     @db.VarChar
+  due_date     DateTime?   @db.Timestamp(6)
+
+  course_batches  course_batches?   @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  submissions     submissions[]
+  lesson_progress lesson_progress[]
+}
+
+// ==========================================
+// LEGACY / OTHER MODELS (Kept for compatibility where needed)
+// ==========================================
+
+model content_items {
+  id           Int       @id @default(autoincrement())
+  title        String?   @db.VarChar
+  type         String?   @db.VarChar
+  content      String?   @db.VarChar
+  duration     Int?
+  is_mandatory Boolean?
+  order        Int?
+  module_id    Int?
+  instructions String?
+  test_config  String?
+  start_time   DateTime? @db.Timestamp(6)
+  end_time     DateTime? @db.Timestamp(6)
+  modules      modules?  @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model modules {
+  id            Int             @id @default(autoincrement())
+  title         String?         @db.VarChar
+  order         Int?
+  course_id     Int?
+  content_items content_items[]
+  courses       courses?        @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_modules_id")
+}
+
+model lesson_progress {
+  id               Int            @id @default(autoincrement())
+  user_id          Int?
+  batch_content_id Int?
+  is_completed     Boolean?
+  completed_at     DateTime?      @db.Timestamp(6)
+  violation_count  Int?
+  is_terminated    Boolean?
+  batch_content    batch_content? @relation(fields: [batch_content_id], references: [id], onDelete: Cascade)
+  users            users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_lesson_progress_id")
+}
+
+model submissions {
+  id               Int            @id @default(autoincrement())
+  user_id          Int?
+  batch_content_id Int?
+  drive_link       String?        @db.VarChar
+  status           String?        @db.VarChar
+  submitted_at     DateTime?      @db.Timestamp(6)
+  batch_content    batch_content? @relation(fields: [batch_content_id], references: [id], onDelete: Cascade)
+  users            users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_submissions_id")
+}
+
+model course_challenges {
+  id                 Int                  @id @default(autoincrement())
+  course_id          Int?
+  title              String?              @db.VarChar
+  description        String?
+  difficulty         String?              @db.VarChar
+  test_cases         String?
+  function_name      String?              @db.VarChar
+  challenge_progress challenge_progress[]
+  courses            courses?             @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_course_challenges_id")
+}
+
+model challenge_progress {
+  id                Int                @id @default(autoincrement())
+  user_id           Int?
+  challenge_id      Int?
+  is_solved         Boolean?
+  solved_at         DateTime?          @db.Timestamp(6)
+  user_code         String?
+  course_challenges course_challenges? @relation(fields: [challenge_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users             users?             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_challenge_progress_id")
+}
+
+model code_tests {
+  id            Int            @id @default(autoincrement())
+  title         String?        @db.VarChar
+  pass_key      String?        @db.VarChar
+  time_limit    Int?
+  instructor_id Int?
+  created_at    DateTime?      @db.Timestamp(6)
+  users         users?         @relation(fields: [instructor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  problems      problems[]
+  test_results  test_results[]
+
+  @@index([id], map: "ix_code_tests_id")
+}
+
+model problems {
+  id          Int         @id @default(autoincrement())
+  test_id     Int?
+  title       String?     @db.VarChar
+  description String?
+  difficulty  String?     @db.VarChar
+  test_cases  String?
+  code_tests  code_tests? @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_problems_id")
+}
+
+model test_results {
+  id              Int         @id @default(autoincrement())
+  test_id         Int?
+  user_id         Int?
+  score           Int?
+  problems_solved Int?
+  time_taken      String?     @db.VarChar
+  submitted_at    DateTime?   @db.Timestamp(6)
+  code_tests      code_tests? @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           users?      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_test_results_id")
+}
+
+model live_sessions {
+  id            Int       @id @default(autoincrement())
+  instructor_id Int?
+  youtube_url   String?   @db.VarChar
+  topic         String?   @db.VarChar
+  is_active     Boolean?
+  started_at    DateTime? @db.Timestamp(6)
+  users         users?    @relation(fields: [instructor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_live_sessions_id")
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  title      String?   @db.VarChar
+  message    String?   @db.VarChar
+  is_read    Boolean?
+  created_at DateTime? @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_notifications_id")
+}
+
+model user_certificates {
+  id             Int       @id @default(autoincrement())
+  user_id        Int?
+  course_id      Int?
+  certificate_id String?   @unique @db.VarChar
+  issued_at      DateTime? @db.Timestamp(6)
+  pdf_url        String?   @db.VarChar
+  courses        courses?  @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users          users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "ix_user_certificates_id")
+}

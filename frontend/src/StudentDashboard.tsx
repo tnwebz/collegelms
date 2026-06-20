@@ -128,14 +128,14 @@ const CourseCard = ({ course, type, navigate, handleFreeEnroll, openEnrollModal,
                             )}
                         </div>
                     ) : (
-                        <span className={`text-lg font-extrabold ${course.price === 0 ? "text-[#87C232]" : "text-[#005EB8]"}`}>
+                        <span className={`text-lg font-extrabold ${course.price === 0 ? "text-[#94A3B8]" : "text-[#005EB8]"}`}>
                             {course.price === 0 ? "Free" : `₹${course.price}`}
                         </span>
                     )}
 
                     {/* ✅ 3. ACTION BUTTONS */}
                     {type === "available" ? (
-                        <button onClick={() => course.price === 0 ? handleFreeEnroll(course.id) : openEnrollModal(course)} className={`px-4 py-2 rounded-lg text-white font-bold text-sm flex items-center gap-2 ${course.price === 0 ? "bg-[#87C232]" : "bg-[#005EB8]"}`}>
+                        <button onClick={() => course.price === 0 ? handleFreeEnroll(course.id) : openEnrollModal(course)} className={`px-4 py-2 rounded-lg text-white font-bold text-sm flex items-center gap-2 ${course.price === 0 ? "bg-[#94A3B8]" : "bg-[#005EB8]"}`}>
                             {course.price === 0 ? <Sparkles size={14} /> : <Lock size={14} />} {course.price === 0 ? "Enroll" : "Unlock"}
                         </button>
                     ) : (
@@ -222,7 +222,7 @@ const StudentDashboard = () => {
 
     // 🎨 PROFESSIONAL THEME PALETTE
     const brand = {
-        iqBlue: "#005EB8", iqGreen: "#87C232", mainBg: "#E2E8F0", cardBg: "#F8FAFC", border: "#cbd5e1", textMain: "#1e293b", textLight: "#64748b"
+        iqBlue: "#005EB8", iqGreen: "#94A3B8", mainBg: "#E2E8F0", cardBg: "#F8FAFC", border: "#cbd5e1", textMain: "#1e293b", textLight: "#64748b"
     };
 
     const languages = [
@@ -281,7 +281,10 @@ const StudentDashboard = () => {
 
             // SAFETY CHECK: Ensure we have arrays
             const allData = Array.isArray(allRes.data) ? allRes.data : [];
-            const myData = Array.isArray(myRes.data) ? myRes.data : [];
+            const myDataRaw = Array.isArray(myRes.data) ? myRes.data : [];
+            
+            // Normalize backend payload (extracts .course if wrapped in batch struct)
+            const myData = myDataRaw.map((c: any) => c.course ? c.course : c);
 
             const myCourseIds = new Set(myData.map((c: any) => c.id));
             setAvailableCourses(allData.filter((c: any) => !myCourseIds.has(c.id)));
@@ -672,7 +675,7 @@ const StudentDashboard = () => {
                     key: import.meta.env.VITE_RAZORPAY_KEY_ID,
                     amount: orderRes.data.amount,
                     currency: orderRes.data.currency,
-                    name: "iQmath Pro",
+                    name: "St. Joseph's",
                     description: `Unlock ${selectedCourse.title}`,
                     order_id: orderRes.data.id,
                     handler: async function () {
@@ -683,7 +686,7 @@ const StudentDashboard = () => {
                         triggerToast("🎉 Payment Successful! Course Unlocked.", "success");
                         fetchData(); setShowModal(false); setActiveTab("learning");
                     },
-                    prefill: { name: "Student", email: "student@iqmath.com" },
+                    prefill: { name: "Student", email: "student@St. Joseph's.com" },
                     theme: { color: "#005EB8" },
                 };
 
@@ -822,7 +825,7 @@ const StudentDashboard = () => {
             <div className="flex h-screen items-center justify-center bg-[#E2E8F0]">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#005EB8]"></div>
-                    <p className="text-slate-600 font-bold animate-pulse">Loading iQmath Dashboard...</p>
+                    <p className="text-slate-600 font-bold animate-pulse">Loading St. Joseph's Dashboard...</p>
                 </div>
             </div>
         );
@@ -832,126 +835,157 @@ const StudentDashboard = () => {
 
     // --- DASHBOARD UI ---
     return (
-        <div className="min-h-screen bg-[#F8FAFC] font-sans">
+        <div className="flex h-screen bg-slate-200 font-sans">
 
-            {/* 1. HEADER BAR */}
-            <header className="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-
-                {/* Left: Logo & Mobile Toggle */}
-                <div className="flex items-center gap-4">
-                    <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden text-slate-600 hover:text-[#005EB8]">
-                        <Menu size={24} />
-                    </button>
-                    <BrandLogo size="md" showTagline />
-                </div>
-
-                {/* Center: Desktop Navigation Menu */}
-                <nav className="hidden lg:flex items-center gap-2">
-                    <NavItem icon={<LayoutDashboard size={18} />} label="Home" active={activeTab === "home"} onClick={() => setActiveTab("home")} />
-                    <NavItem icon={<BookOpen size={18} />} label="My Learning" active={activeTab === "learning"} onClick={() => setActiveTab("learning")} />
-                    <NavItem icon={<Code size={18} />} label="Code Test" active={activeTab === "test"} onClick={() => setActiveTab("test")} />
-                    <NavItem icon={<Compass size={18} />} label="Explore" active={activeTab === "explore"} onClick={() => setActiveTab("explore")} />
-                    <NavItem icon={<Award size={18} />} label="Certificates" active={activeTab === "certificates"} onClick={() => setActiveTab("certificates")} />
-                </nav>
-
-                {/* Right: Actions (Notification & Profile) */}
-                <div className="flex items-center gap-2 lg:gap-4">
-
-                    {/* Notification Bell */}
-                    <button
-                        onClick={() => {
-                            setActiveTab("notifications");
-                            setUnreadCount(0);
-                            axios.patch(`${API_BASE_URL}/notifications/read`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
-                        }}
-                        className="relative p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-600"
-                    >
-                        <BellRing size={20} />
-                        {unreadCount > 0 && <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>}
-                    </button>
-
-                    {/* Profile Dropdown */}
-                    <div className="relative">
-                        <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold shadow-md hover:scale-105 transition-transform">
-                            <User size={18} className="lg:w-5 lg:h-5" />
-                        </button>
-
-                        {showProfileMenu && (
-                            <div className="absolute right-0 top-12 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-50 animate-fade-in">
-                                <div className="mb-3 border-b border-slate-100 pb-3">
-                                    <p className="font-bold text-slate-800 truncate">{studentProfile.name}</p>
-                                    <p className="text-xs text-slate-500 truncate">{studentProfile.email}</p>
-                                </div>
-                                <button onClick={() => { setActiveTab("settings"); setShowProfileMenu(false); }} className="flex items-center gap-3 w-full p-2 rounded-lg text-slate-600 hover:bg-slate-50 hover:text-[#005EB8] text-sm font-bold mb-1 transition-colors">
-                                    <Settings size={16} /> Settings
-                                </button>
-                                <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2 rounded-lg text-red-500 hover:bg-red-50 text-sm font-bold transition-colors">
-                                    <LogOut size={16} /> Logout
-                                </button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Mobile Menu Toggle (Visible on small screens) */}
-                    <button className="md:hidden p-2 text-slate-600" onClick={() => setCollapsed(!collapsed)}>
-                        <Menu size={24} />
-                    </button>
-                </div>
-            </header>
-
-            {/* 2. MOBILE MENU OVERLAY */}
+            {/* MOBILE OVERLAY */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-[60] lg:hidden">
-                    {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}></div>
-
-                    {/* Sidebar */}
-                    <motion.div
-                        initial={{ x: -300 }}
-                        animate={{ x: 0 }}
-                        exit={{ x: -300 }}
-                        className="absolute left-0 top-0 h-full w-64 bg-white shadow-2xl p-6 flex flex-col gap-6"
-                    >
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                            <span className="text-xl font-extrabold text-[#005EB8]">iQmath<span className="text-[#87C232]">Pro</span></span>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        <nav className="flex flex-col gap-2">
-                            <NavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === "home"} onClick={() => { setActiveTab("home"); setIsMobileMenuOpen(false); }} />
-                            <NavItem icon={<BookOpen size={20} />} label="My Learning" active={activeTab === "learning"} onClick={() => { setActiveTab("learning"); setIsMobileMenuOpen(false); }} />
-                            <NavItem icon={<Code size={20} />} label="Code Test" active={activeTab === "test"} onClick={() => { setActiveTab("test"); setIsMobileMenuOpen(false); }} />
-                            <NavItem icon={<Compass size={20} />} label="Explore" active={activeTab === "explore"} onClick={() => { setActiveTab("explore"); setIsMobileMenuOpen(false); }} />
-                            <NavItem icon={<Award size={20} />} label="Certificates" active={activeTab === "certificates"} onClick={() => { setActiveTab("certificates"); setIsMobileMenuOpen(false); }} />
-                        </nav>
-
-                        <div className="mt-auto border-t border-slate-100 pt-4">
-                            <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2 rounded-lg text-red-500 hover:bg-red-50 text-sm font-bold transition-colors">
-                                <LogOut size={20} /> Logout
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
             )}
 
-            {/* 3. MAIN CONTENT AREA (Full Width) */}
-            <main className="p-4 lg:p-8 max-w-7xl mx-auto">
-
-                {/* Dynamic Title based on Tab */}
-                <div className="mb-8">
-                    <h2 className="text-3xl font-extrabold text-slate-800">
-                        {activeTab === "home" && "Dashboard Overview"}
-                        {activeTab === "learning" && "My Learning"}
-                        {activeTab === "explore" && "Explore Courses"}
-                        {activeTab === "test" && "Coding Arena"}
-                        {activeTab === "certificates" && "My Achievements"}
-                        {activeTab === "notifications" && "Notifications"}
-                        {activeTab === "settings" && "Account Settings"}
-                    </h2>
-                    <p className="text-slate-500 font-medium">Welcome to your student portal</p>
+            {/* SIDEBAR */}
+            <aside
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-slate-50 border-r border-slate-300 shadow-xl transition-all duration-300 lg:static lg:shadow-none
+                    ${isMobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0"} 
+                    ${collapsed ? "lg:w-20" : "lg:w-72"}
+                `}
+            >
+                {/* LOGO SECTION */}
+                <div className={`p-6 border-b border-slate-300 flex items-center gap-2 ${collapsed ? "lg:justify-center lg:px-2" : "justify-between"}`}>
+                    {(!collapsed || isMobileMenuOpen) && (
+                        <div>
+                            <BrandLogo size="md" />
+                            <span className="text-[11px] text-[#005EB8] font-bold uppercase tracking-widest block mt-1">
+                                Student
+                            </span>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="hidden lg:flex p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
+                    >
+                        <Menu size={24} />
+                    </button>
+                    <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-colors"
+                    >
+                        <X size={24} />
+                    </button>
                 </div>
+
+                {/* NAVIGATION */}
+                <nav className="flex-1 overflow-y-auto p-3 space-y-2">
+                    {[
+                        { key: "home", label: "Home", icon: <LayoutDashboard size={20} /> },
+                        { key: "learning", label: "My Learning", icon: <BookOpen size={20} /> },
+                        { key: "test", label: "Code Test", icon: <Code size={20} /> },
+                        { key: "explore", label: "Explore", icon: <Compass size={20} /> },
+                        { key: "certificates", label: "Certificates", icon: <Award size={20} /> },
+                    ].map((item) => {
+                        const isActive = activeTab === item.key;
+                        return (
+                            <div
+                                key={item.key}
+                                onClick={() => { setActiveTab(item.key); setIsMobileMenuOpen(false); }}
+                                title={collapsed ? item.label : ""}
+                                className={`flex items-center p-3.5 rounded-xl cursor-pointer transition-all duration-200 group
+                                    ${collapsed ? "justify-center" : "justify-between"}
+                                    ${isActive ? "bg-slate-100 text-[#005EB8] shadow-sm font-bold" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 font-medium"}
+                                `}
+                            >
+                                <div className="flex items-center gap-3.5">
+                                    <div className={`transition-transform duration-200 ${isActive ? "scale-110" : "group-hover:scale-110"}`}>{item.icon}</div>
+                                    {(!collapsed || isMobileMenuOpen) && <span className="text-[15px]">{item.label}</span>}
+                                </div>
+                                {(!collapsed || isMobileMenuOpen) && isActive && <ChevronRight size={16} className="text-[#005EB8]" strokeWidth={3} />}
+                            </div>
+                        );
+                    })}
+                </nav>
+
+                {/* FOOTER */}
+                <div className="p-5 border-t border-slate-300">
+                    <div
+                        onClick={handleLogout}
+                        className={`flex items-center gap-3 p-3 text-slate-500 cursor-pointer font-semibold rounded-lg transition-colors hover:bg-red-50 hover:text-red-500
+                            ${collapsed ? "justify-center" : "justify-start"}
+                        `}
+                    >
+                        <LogOut size={20} strokeWidth={2} /> {(!collapsed || isMobileMenuOpen) && <span>Sign Out</span>}
+                    </div>
+                </div>
+            </aside>
+
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative w-full">
+
+                {/* HEADER */}
+                <header className="h-20 bg-slate-50 border-b border-slate-300 flex items-center justify-between px-6 lg:px-10 shrink-0">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 -ml-2 text-slate-600">
+                            <Menu size={24} />
+                        </button>
+                        <h1 className="text-xl lg:text-2xl font-bold text-[#1e293b]">
+                            {activeTab === "home" && "Dashboard Overview"}
+                            {activeTab === "learning" && "My Learning"}
+                            {activeTab === "explore" && "Explore Courses"}
+                            {activeTab === "test" && "Coding Arena"}
+                            {activeTab === "certificates" && "My Achievements"}
+                            {activeTab === "notifications" && "Notifications"}
+                            {activeTab === "settings" && "Account Settings"}
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center gap-4 lg:gap-6">
+                        {/* Notification Bell */}
+                        <button
+                            onClick={() => {
+                                setActiveTab("notifications");
+                                setUnreadCount(0);
+                                axios.patch(`${API_BASE_URL}/notifications/read`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+                            }}
+                            className="p-2 rounded-full hover:bg-slate-200 transition-colors relative"
+                        >
+                            <BellRing size={22} className="text-slate-500" strokeWidth={2} />
+                            {unreadCount > 0 && <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
+                        </button>
+
+                        {/* PROFILE DROPDOWN */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                className="w-10 h-10 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold text-base shadow-lg shadow-blue-200/50 hover:scale-105 transition-transform"
+                            >
+                                <User size={18} />
+                            </button>
+
+                            {showProfileMenu && (
+                                <div className="absolute right-0 top-14 w-64 bg-slate-50 rounded-xl shadow-2xl p-4 z-[100] border border-slate-200 animate-fade-in-up">
+                                    <div className="mb-4 border-b border-slate-200 pb-4">
+                                        <p className="font-bold text-[#1e293b]">{studentProfile.name}</p>
+                                        <p className="text-xs text-slate-500 mt-1">{studentProfile.email}</p>
+                                    </div>
+                                    <button onClick={() => { setActiveTab("settings"); setShowProfileMenu(false); }} className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-slate-100 text-[#1e293b] text-sm font-medium transition-colors text-left">
+                                        <Settings size={18} /> Settings
+                                    </button>
+                                    <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-red-50 text-red-500 text-sm font-bold transition-colors text-left mt-1">
+                                        <LogOut size={18} /> Logout
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </header>
+
+                {/* CONTENT */}
+                <div className="flex-1 p-4 lg:p-10 overflow-y-auto overflow-x-hidden bg-slate-200">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="mb-8">
+                            <p className="text-slate-500 font-medium">Welcome to your student portal</p>
+                        </div>
 
                 {/* --- CONTENT SECTIONS --- */}
 
@@ -1136,6 +1170,9 @@ const StudentDashboard = () => {
                     </div>
                 )}
 
+
+                    </div>{/* end max-w-7xl */}
+                </div>{/* end content area */}
             </main>
 
 
@@ -1143,7 +1180,7 @@ const StudentDashboard = () => {
             {showModal && selectedCourse && (
                 <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(15, 23, 42, 0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-xl shadow-2xl max-w-sm w-full relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#005EB8] to-[#87C232]"></div>
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#005EB8] to-[#94A3B8]"></div>
                         <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20} /></button>
 
                         <div className="p-6 pb-0">

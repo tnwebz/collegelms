@@ -7,14 +7,16 @@ interface Student {
   id: number;
   full_name: string;
   email: string;
-  joined_at: string;
-  enrolled_courses: string[];
+  joined_at?: string;
+  created_at?: string;
+  enrolled_batches?: string[];
 }
 
 const StudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFilterBatch, setSelectedFilterBatch] = useState("");
 
   // Delete Modal State
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
@@ -42,7 +44,7 @@ const StudentManagement = () => {
     cardBg: "#F8FAFC",
     border: "#cbd5e1",
     danger: "#ef4444",
-    green: "#87C232" // Added green for success toast
+    green: "#94A3B8" // Added green for success toast
   };
 
   useEffect(() => {
@@ -60,7 +62,7 @@ const StudentManagement = () => {
       console.error("Failed to load students", err);
       // Mock data for demonstration if backend is empty
       setStudents([
-        { id: 1, full_name: "Demo Student", email: "demo@college.edu", joined_at: "2023-12-01", enrolled_courses: ["Python Mastery", "Java Basics"] }
+        { id: 1, full_name: "Demo Student", email: "demo@college.edu", joined_at: "2023-12-01", enrolled_batches: ["Python Mastery (Sem 1 - Sec A)", "Java Basics (Sem 2 - Sec B)"] }
       ]);
     } finally {
       setLoading(false);
@@ -100,10 +102,13 @@ const StudentManagement = () => {
     }
   };
 
-  const filteredStudents = students.filter(s =>
-    s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const allBatches = Array.from(new Set(students.flatMap(s => s.enrolled_batches || [])));
+
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || s.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBatch = selectedFilterBatch ? (s.enrolled_batches || []).includes(selectedFilterBatch) : true;
+    return matchesSearch && matchesBatch;
+  });
 
   return (
     <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto", position: "relative" }}>
@@ -115,19 +120,34 @@ const StudentManagement = () => {
           <p style={{ color: brand.textLight, marginTop: "5px" }}>Manage enrollments and remove users.</p>
         </div>
 
-        {/* Search Bar */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "300px" }}>
-          <Search size={18} style={{ position: "absolute", left: "12px", top: "12px", color: brand.textLight }} />
-          <input
-            type="text"
-            placeholder="Search students..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Search and Filter */}
+        <div style={{ display: "flex", gap: "12px", width: "100%", maxWidth: "500px", flexDirection: "row" }}>
+          {/* Batch Filter */}
+          <select
+            value={selectedFilterBatch}
+            onChange={(e) => setSelectedFilterBatch(e.target.value)}
             style={{
-              width: "100%", padding: "10px 10px 10px 40px", borderRadius: "10px",
-              border: `1px solid ${brand.border}`, outline: "none", fontSize: "14px"
+              padding: "10px", borderRadius: "10px", border: `1px solid ${brand.border}`,
+              outline: "none", fontSize: "14px", color: brand.textMain, background: "white", flex: 1
             }}
-          />
+          >
+            <option value="">All Batches</option>
+            {allBatches.map((b, i) => <option key={i} value={b}>{b}</option>)}
+          </select>
+          {/* Search Bar */}
+          <div style={{ position: "relative", flex: 2 }}>
+            <Search size={18} style={{ position: "absolute", left: "12px", top: "12px", color: brand.textLight }} />
+            <input
+              type="text"
+              placeholder="Search students..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 10px 10px 40px", borderRadius: "10px",
+                border: `1px solid ${brand.border}`, outline: "none", fontSize: "14px"
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -141,7 +161,7 @@ const StudentManagement = () => {
                 <th style={{ padding: "20px", fontWeight: "700" }}>Joined Date</th>
                 {/* ✅ NEW: Password Column Header */}
                 <th style={{ padding: "20px", fontWeight: "700" }}>Password</th>
-                <th style={{ padding: "20px", fontWeight: "700" }}>Enrolled Courses</th>
+                <th style={{ padding: "20px", fontWeight: "700" }}>Enrolled Batches</th>
                 <th style={{ padding: "20px", fontWeight: "700", textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
@@ -166,7 +186,7 @@ const StudentManagement = () => {
                     </td>
                     <td style={{ padding: "20px", color: brand.textLight, fontSize: "14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Calendar size={14} /> {student.joined_at || "N/A"}
+                        <Calendar size={14} /> {student.created_at ? new Date(student.created_at).toLocaleDateString() : student.joined_at || "N/A"}
                       </div>
                     </td>
 
@@ -186,7 +206,7 @@ const StudentManagement = () => {
 
                     <td style={{ padding: "20px" }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                        {student.enrolled_courses.length > 0 ? student.enrolled_courses.map((c, i) => (
+                        {(student.enrolled_batches || []).length > 0 ? (student.enrolled_batches || []).map((c, i) => (
                           <span key={i} style={{ fontSize: "11px", background: "#f1f5f9", padding: "4px 8px", borderRadius: "4px", color: brand.textMain, border: `1px solid ${brand.border}` }}>
                             {c}
                           </span>

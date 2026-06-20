@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
@@ -52,7 +52,7 @@ const CoursePreview = () => {
   // 🎨 PROFESSIONAL THEME
   const brand = {
     blue: "#005EB8",
-    green: "#87C232",
+    green: "#94A3B8",
     textMain: "#1e293b",
     textLight: "#64748b",
     cardBg: "#F8FAFC",
@@ -229,7 +229,7 @@ const CoursePreview = () => {
     switch (type) {
       case "video": return <Video size={18} color="#005EB8" />;
       case "note": return <FileText size={18} color="#E67E22" />;
-      case "quiz": return <HelpCircle size={18} color="#87C232" />;
+      case "quiz": return <HelpCircle size={18} color="#94A3B8" />;
       case "code_test": return <Code size={18} color="#9B59B6" />;
       case "live_test": return <Zap size={18} color="#F59E0B" />;
       case "live_class": return <Radio size={18} color="#EF4444" />;
@@ -302,7 +302,7 @@ const CoursePreview = () => {
                                 className="flex-1 p-2 rounded-lg border border-[#005EB8] outline-none text-sm font-bold shadow-sm"
                                 autoFocus
                               />
-                              <button onClick={handleEditModuleSave} className="bg-[#87C232] border-none rounded-lg p-2 text-white hover:bg-[#76a928] transition-colors"><Check size={16} /></button>
+                              <button onClick={handleEditModuleSave} className="bg-[#94A3B8] border-none rounded-lg p-2 text-white hover:bg-[#76a928] transition-colors"><Check size={16} /></button>
                               <button onClick={() => setEditingModuleId(null)} className="bg-red-500 border-none rounded-lg p-2 text-white hover:bg-red-600 transition-colors"><X size={16} /></button>
                             </div>
                           ) : (

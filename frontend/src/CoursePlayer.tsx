@@ -25,10 +25,10 @@ const ToastNotification = ({ toast, setToast }: any) => {
             position: "fixed", top: "20px", right: "20px", zIndex: 9999,
             background: "white", padding: "16px 24px", borderRadius: "12px",
             boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
-            borderLeft: `6px solid ${toast.type === "success" ? "#87C232" : "#ef4444"}`,
+            borderLeft: `6px solid ${toast.type === "success" ? "#94A3B8" : "#ef4444"}`,
             display: "flex", alignItems: "center", gap: "12px", animation: "slideIn 0.3s ease-out"
         }}>
-            {toast.type === "success" ? <CheckCircle size={24} color="#87C232" /> : <AlertCircle size={24} color="#ef4444" />}
+            {toast.type === "success" ? <CheckCircle size={24} color="#94A3B8" /> : <AlertCircle size={24} color="#ef4444" />}
             <div>
                 <h4 style={{ margin: "0", fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
                     {toast.type === "success" ? "Success" : "Error"}
@@ -465,7 +465,7 @@ const CodingPlayer = ({ course, token }: { course: any, token: string }) => {
                 test_cases: cases
             }, { headers: { Authorization: `Bearer ${token}` } });
 
-            let report = res.data;
+            const report = res.data;
             if (report.error) {
                 setOutput(`❌ SERVER ERROR:\n\n${report.error}`);
                 setLoading(false);
@@ -627,7 +627,7 @@ const CodingPlayer = ({ course, token }: { course: any, token: string }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {challenges.filter(c => c.difficulty === activeTab).map((c, idx) => (
                         <div key={c.id} className={`bg-white p-6 rounded-2xl border transition-all hover:shadow-xl group relative overflow-hidden ${c.is_solved ? "border-green-200 bg-green-50/30" : "border-slate-200"}`}>
-                            {c.is_solved && <div className="absolute top-0 right-0 bg-[#87C232] text-white p-1 rounded-bl-xl"><CheckCircle size={16} /></div>}
+                            {c.is_solved && <div className="absolute top-0 right-0 bg-[#94A3B8] text-white p-1 rounded-bl-xl"><CheckCircle size={16} /></div>}
                             <div className="flex items-center gap-3 mb-4">
                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${c.is_solved ? "bg-green-100 text-green-700" : "bg-blue-50 text-[#005EB8]"}`}>
                                     {idx + 1}
@@ -682,11 +682,14 @@ const DelayedVideoPlayer = ({ lesson, plyrOptions }: { lesson: any, plyrOptions:
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
-    const getDriveEmbedUrl = (url: string) => {
+    const getDriveFileId = (url: string): string | null => {
         if (!url) return null;
         if (url.includes("drive.google.com")) {
-            // Convert /view or /edit to /preview for embedding
-            return url.replace(/\/view.*/, "/preview").replace(/\/edit.*/, "/preview");
+            // Extract file ID from various Drive URL formats
+            const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (match) return match[1];
+            const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+            if (match2) return match2[1];
         }
         return null;
     };
@@ -716,9 +719,9 @@ const DelayedVideoPlayer = ({ lesson, plyrOptions }: { lesson: any, plyrOptions:
     }), [plyrOptions]);
 
     const videoId = getYoutubeId(lesson.url);
-    const driveUrl = getDriveEmbedUrl(lesson.url);
+    const driveFileId = getDriveFileId(lesson.url);
 
-    if (!videoId && !driveUrl) return <div className="text-white p-10">Invalid Video URL</div>;
+    if (!videoId && !driveFileId) return <div className="text-white p-10">Invalid Video URL</div>;
 
     if (!isReady) {
         return (
@@ -767,19 +770,22 @@ const DelayedVideoPlayer = ({ lesson, plyrOptions }: { lesson: any, plyrOptions:
                             options={customOptions} // ✅ Uses options WITHOUT default fullscreen button
                         />
                     )}
-                    {driveUrl && (
-                        <iframe
-                            src={driveUrl}
-                            width="100%"
-                            height="100%"
-                            style={{ border: "none", minHeight: isFullscreen ? "100vh" : "500px" }}
-                            allow="autoplay"
-                            allowFullScreen
-                        />
+                    {driveFileId && (
+                        <video
+                            key={lesson.id}
+                            controls
+                            autoPlay
+                            controlsList="nodownload"
+                            style={{ width: "100%", height: isFullscreen ? "100vh" : "500px", background: "black" }}
+                        >
+                            <source src={`https://drive.google.com/uc?export=download&id=${driveFileId}`} type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
                     )}
                 </div>
 
-                {/* 🛡️ INTERCEPTOR SHIELD (Still works in Fullscreen!) */}
+                {/* 🛡️ INTERCEPTOR SHIELD (Only for YouTube — prevents pop-out) */}
+                {videoId && (
                 <div
                     style={{
                         position: "absolute",
@@ -796,7 +802,6 @@ const DelayedVideoPlayer = ({ lesson, plyrOptions }: { lesson: any, plyrOptions:
                         if (videoId && plyrRef.current?.plyr) {
                             plyrRef.current.plyr.togglePlay();
                         }
-                        // For Drive, we can't toggle play via JS easily on an iframe, so this shield mainly prevents pop-outs.
                     }}
                     onDoubleClick={(e) => {
                         e.stopPropagation();
@@ -804,6 +809,7 @@ const DelayedVideoPlayer = ({ lesson, plyrOptions }: { lesson: any, plyrOptions:
                         console.log("🛡️ Blocked Double Tap");
                     }}
                 />
+                )}
 
                 {/* 5️⃣ CUSTOM FULLSCREEN BUTTON (Floating Overlay) */}
                 <button
@@ -1119,7 +1125,7 @@ const CoursePlayer = () => {
         setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
     };
 
-    const brand = { blue: "#005EB8", green: "#87C232", textMain: "#0f172a", textLight: "#64748b" };
+    const brand = { blue: "#005EB8", green: "#94A3B8", textMain: "#0f172a", textLight: "#64748b" };
 
     const handlePayment = async () => {
         try {
@@ -1141,14 +1147,14 @@ const CoursePlayer = () => {
                 key: "rzp_test_Ru8lDcv8KvAiC0",
                 amount: data.amount,
                 currency: "INR",
-                name: "iQmath Pro",
+                name: "St. Joseph's",
                 description: "Lifetime Course Access",
                 order_id: data.id,
                 handler: function (response: any) {
                     triggerToast(`Payment Successful! ID: ${response.razorpay_payment_id}`, "success");
                     setTimeout(() => window.location.reload(), 1500);
                 },
-                theme: { color: "#87C232" }
+                theme: { color: "#94A3B8" }
             };
             const rzp1 = new (window as any).Razorpay(options);
             rzp1.open();
@@ -1160,6 +1166,12 @@ const CoursePlayer = () => {
 
     useEffect(() => {
         const fetchCourse = async () => {
+            if (!courseId || courseId === "undefined") {
+                triggerToast("Invalid Course ID. Redirecting to dashboard...", "error");
+                navigate("/student-dashboard");
+                return;
+            }
+
             try {
                 const token = localStorage.getItem("token");
                 const res = await axios.get(`${API_BASE_URL}/courses/${courseId}/player`, { headers: { Authorization: `Bearer ${token}` } });
@@ -1368,7 +1380,7 @@ const CoursePlayer = () => {
 
                     <button
                         onClick={handlePayment}
-                        className="w-full py-3.5 bg-[#87C232] hover:bg-[#76a82b] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200 hover:scale-105 active:scale-95 cursor-pointer"
+                        className="w-full py-3.5 bg-[#94A3B8] hover:bg-[#76a82b] text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-200 hover:scale-105 active:scale-95 cursor-pointer"
                     >
                         <CreditCard size={20} /> Buy Lifetime Access
                     </button>
@@ -1395,7 +1407,7 @@ const CoursePlayer = () => {
                     </div>
                     <div className="flex items-center gap-2 lg:gap-4">
                         {localStorage.getItem("role") === "instructor" && (<button onClick={handleEditClick} className="hidden lg:flex items-center gap-2 bg-slate-100 text-slate-700 px-3 py-2 rounded-lg font-bold border border-slate-200 hover:bg-slate-200 transition-colors text-sm"><Edit size={16} /> Edit Course</button>)}
-                        <button onClick={handlePayment} className="hidden sm:flex items-center gap-2 bg-[#87C232] text-white px-4 py-2 rounded-lg font-bold border-none cursor-pointer hover:bg-[#76a82b] transition-colors text-xs lg:text-sm"><CreditCard size={18} /> Buy Lifetime Access</button>
+                        <button onClick={handlePayment} className="hidden sm:flex items-center gap-2 bg-[#94A3B8] text-white px-4 py-2 rounded-lg font-bold border-none cursor-pointer hover:bg-[#76a82b] transition-colors text-xs lg:text-sm"><CreditCard size={18} /> Buy Lifetime Access</button>
                         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="bg-none border-none cursor-pointer p-2 hover:bg-slate-100 rounded-lg"><Menu color={brand.textMain} size={24} /></button>
                     </div>
                 </header>
@@ -1436,7 +1448,7 @@ const CoursePlayer = () => {
                                                         className={`flex items-center gap-3 p-3 pl-12 cursor-pointer border-l-4 transition-all ${isActive ? 'bg-blue-50 border-blue-600' : 'bg-white border-transparent hover:bg-slate-50'}`}
                                                     >
                                                         <div className={isActive ? "text-blue-600" : "text-slate-400"}>
-                                                            {lesson.is_completed ? (<CheckCircle size={16} className="text-[#87C232]" fill="#ecfccb" />) : (
+                                                            {lesson.is_completed ? (<CheckCircle size={16} className="text-[#94A3B8]" fill="#ecfccb" />) : (
                                                                 <>
                                                                     {lesson.type.includes("video") && <PlayCircle size={16} />}
                                                                     {lesson.type === "note" && <FileText size={16} />}

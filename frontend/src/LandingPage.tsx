@@ -10,7 +10,7 @@ import {
 
 // --- 🎨 BRAND CONSTANTS ---
 const BRAND_BLUE = "#005EB8";
-const BRAND_GREEN = "#87C232";
+const BRAND_GREY = "#94A3B8";
 
 // --- 🔄 HERO SLIDE DATA ---
 const SLIDES = [
@@ -18,12 +18,11 @@ const SLIDES = [
     id: 0,
     line1: "Learn Every Day & Any",
     line2: "New Skills Online",
-    line3: "With Our iQmath Platform.",
+    line3: "With St. Joseph's Platform.",
     sub: "Future-proof your career with world-class education.",
-    highlightColor: "text-[#87C232]",
-    buttonColor: "bg-[#87C232]",
-    panelGradient: "from-[#4A7729] via-[#87C232] to-[#2D4B19]",
-    accent: BRAND_GREEN
+    highlightColor: "text-[#005EB8]",
+    buttonColor: "bg-[#005EB8]",
+    accent: BRAND_BLUE
   },
   {
     id: 1,
@@ -32,57 +31,23 @@ const SLIDES = [
     line3: "For Your Future.",
     sub: "Curated content designed for the modern learner.",
     highlightColor: "text-[#005EB8]",
-    buttonColor: "bg-[#005EB8]",
-    panelGradient: "from-[#003366] via-[#005EB8] to-[#001A33]",
+    buttonColor: "bg-[#1e293b]",
     accent: BRAND_BLUE
   },
 ];
 
-// --- 🎨 PRECISE BRAND LOGO (EXACT REPLICA) ---
-const IQMathLogo = ({ isTwoTone = false, color = "white" }) => (
-  <svg
-    viewBox="0 0 540 160"
-    className="w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[440px]"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <g transform="translate(10, 20)">
-      {/* Precise 'i' */}
-      <circle cx="35" cy="15" r="10" fill={isTwoTone ? BRAND_BLUE : color} />
-      <rect x="25" y="32" width="20" height="68" rx="5" fill={isTwoTone ? BRAND_BLUE : color} />
-
-      {/* Precise 'Q' */}
-      <path
-        d="M105 15 A50 50 0 1 0 105 115"
-        stroke={isTwoTone ? BRAND_BLUE : color}
-        strokeWidth="18"
-        fill="none"
-      />
-      <path
-        d="M105 15 A50 50 0 0 1 140 105 L 155 125"
-        stroke={isTwoTone ? BRAND_GREEN : color}
-        strokeWidth="18"
-        fill="none"
-        strokeLinecap="round"
-      />
-
-      {/* Circuit Nodes */}
-      <g stroke={isTwoTone ? BRAND_GREEN : color} strokeWidth="2.5" fill="none">
-        <path d="M85 65 V50 H95" />
-        <path d="M105 42 V55" />
-        <path d="M122 75 V60 H112" />
-        <circle cx="85" cy="65" r="5" fill={isTwoTone ? BRAND_GREEN : color} stroke="none" />
-        <circle cx="105" cy="42" r="5" fill={isTwoTone ? BRAND_GREEN : color} stroke="none" />
-        <circle cx="122" cy="75" r="5" fill={isTwoTone ? BRAND_GREEN : color} stroke="none" />
-      </g>
-    </g>
-    <text x="180" y="118" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="105" fill={isTwoTone ? BRAND_BLUE : color} letterSpacing="-5">math</text>
-    <text x="185" y="148" fontFamily="Arial, sans-serif" fontWeight="600" fontSize="34" fill={isTwoTone ? BRAND_GREEN : color} letterSpacing="4">Technologies</text>
-  </svg>
+// --- 🎨 BRAND LOGO (St. Joseph's) ---
+const CollegeLogo = ({ className = "" }: { className?: string }) => (
+  <img
+    src="/stlogo.png"
+    alt="St. Joseph's College of Engineering"
+    className={`w-auto object-contain ${className}`}
+  />
 );
 
 // --- 📝 SECTION DATA ---
 const DYNAMIC_TEXTS = [
-  "Discover a transformative learning experience with iQmath's online courses, meticulously crafted for real-life applicability. Our curriculum seamlessly integrates theory with practical insights.",
+  "Discover a transformative learning experience with St. Joseph's online courses, meticulously crafted for real-life applicability. Our curriculum seamlessly integrates theory with practical insights.",
   "Our expert-led sessions focus on industry-relevant skills, ensuring you stay ahead of the curve. Join thousands of successful students who have upgraded their careers.",
   "Experience interactive learning with live doubt-clearing sessions and hands-on projects. We prioritize your growth with personalized mentorship and community support."
 ];
@@ -114,7 +79,7 @@ const CompanyLogo = ({ name }: { name: string }) => {
     case "TCS": return <svg viewBox="0 0 200 60" className="w-full h-full"><text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontFamily="sans-serif" fontWeight="900" fontSize="45" fill="#5F259F" letterSpacing="-2">tcs</text></svg>;
     case "Amazon": return <svg viewBox="0 0 200 60" className="w-full h-full"><text x="100" y="35" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold" fontSize="38" fill="#232F3E">amazon</text><path d="M 45 45 Q 100 65 155 45" stroke="#FF9900" strokeWidth="4" fill="none" /></svg>;
     case "Cognizant": return <svg viewBox="0 0 200 60" className="w-full h-full"><text x="110" y="40" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold" fontSize="30" fill="#0033A0">Cognizant</text><path d="M 30 30 L 45 15 L 60 30 L 45 45 Z" fill="#26A8E0" /></svg>;
-    case "NielsenIQ": return <svg viewBox="0 0 200 60" className="w-full h-full"><path d="M 20 15 L 40 45 L 60 15" stroke="#87C232" strokeWidth="4" fill="none" /><text x="120" y="40" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold" fontSize="28" fill="#666">NielsenIQ</text></svg>;
+    case "NielsenIQ": return <svg viewBox="0 0 200 60" className="w-full h-full"><path d="M 20 15 L 40 45 L 60 15" stroke="#94A3B8" strokeWidth="4" fill="none" /><text x="120" y="40" textAnchor="middle" fontFamily="sans-serif" fontWeight="bold" fontSize="28" fill="#666">NielsenIQ</text></svg>;
     default: return <div className="text-gray-400 font-bold">{name}</div>;
   }
 };
@@ -158,8 +123,12 @@ const LandingPage = () => {
       <div className="min-h-screen w-full relative flex flex-col lg:flex-row overflow-hidden">
         {/* LEFT CONTENT */}
         <div className="w-full lg:w-[50%] flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20 bg-white relative z-20 text-center lg:text-left">
-          <div className="absolute top-6 left-6 lg:left-20 scale-75 origin-top-left lg:scale-50">
-            <IQMathLogo isTwoTone={true} />
+          <div className="absolute top-6 left-6 lg:left-20 flex items-center gap-3">
+            <CollegeLogo className="h-14 lg:h-16" />
+            <div className="leading-tight">
+              <span className="text-[#1e293b] font-bold text-xs lg:text-sm block">St Joseph's</span>
+              <span className="text-[#1e293b] font-bold text-xs lg:text-sm block">LMS Portal</span>
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
@@ -183,33 +152,30 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* RIGHT VISUAL PANEL (HIDDEN ON MOBILE/TABLET FOR SIMPLICITY, OR VISIBLE IF DESIRED) */}
-        <div className="hidden lg:flex w-[50%] h-auto min-h-screen relative items-center justify-center">
+        {/* RIGHT VISUAL PANEL — Campus Image Crossfade */}
+        <div className="hidden lg:flex w-[50%] h-auto min-h-screen relative items-center justify-center overflow-hidden">
+          {/* Skewed white partition overlay */}
           <div className="absolute top-0 bottom-0 -left-28 w-56 bg-white transform skew-x-[-18deg] z-10 shadow-[-20px_0_40px_rgba(0,0,0,0.05)]"></div>
           <motion.div animate={{ backgroundColor: currentSlide.accent }} className="absolute top-0 bottom-0 -left-14 w-4 transform skew-x-[-18deg] z-10 opacity-30" />
-          <motion.div key={`bg-${index}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} className={`absolute inset-0 bg-gradient-to-br ${currentSlide.panelGradient}`} />
-          <div className="relative z-20">
-            <AnimatePresence mode="wait">
-              <motion.div key={`logo-${index}`} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.05, opacity: 0 }} transition={{ duration: 0.5 }} className="drop-shadow-[0_25px_40px_rgba(0,0,0,0.3)]">
-                {index === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <h1 className="text-5xl lg:text-7xl font-black text-white leading-tight tracking-tighter text-center drop-shadow-xl">
-                      World<br />Class<br />Courses
-                    </h1>
-                    <div className="h-1 w-32 bg-white/50 mt-6 rounded-full" />
-                  </div>
-                ) : (
-                  <>
-                    <IQMathLogo color="white" />
-                    <div className="mt-4 text-center">
-                      <div className="h-0.5 w-48 bg-white/40 mx-auto rounded-full mb-4" />
-                      <h3 className="text-white text-3xl font-light tracking-[0.3em] uppercase opacity-90">Technologies</h3>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
+
+          {/* Campus images — both always mounted, crossfade via opacity */}
+          <motion.img
+            src="/campus.jpg"
+            alt="Campus aerial view"
+            className="absolute inset-0 w-full h-full object-cover"
+            animate={{ opacity: index === 0 ? 1 : 0 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+          />
+          <motion.img
+            src="/campus2.jpg"
+            alt="Campus entrance"
+            className="absolute inset-0 w-full h-full object-cover"
+            animate={{ opacity: index === 1 ? 1 : 0 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+          />
+
+          {/* Subtle dark overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 z-[5]" />
         </div>
       </div>
 
@@ -312,12 +278,12 @@ const LandingPage = () => {
       {/* ================= SECTION 6: FOOTER ================= */}
       <footer className="w-full bg-[#020617] text-slate-300 py-12 lg:py-16 px-6 lg:px-24 border-t border-slate-800">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-          <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">About Company<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><h1 className="text-2xl font-black text-white tracking-tighter">iQ<span className="text-[#005EB8]">math</span></h1></div>
+          <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">About Us<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><img src="/stlogo.png" alt="St. Joseph's" className="h-14 w-auto" /><p className="text-slate-400 text-xs mt-2">St. Joseph's College of Engineering</p></div>
           <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">Quick Links<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><ul className="space-y-3 text-sm font-medium">{["Marketing", "Data Science", "Business"].map((item) => (<li key={item} className="hover:text-[#005EB8] cursor-pointer transition-colors">{item}</li>))}</ul></div>
           <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">Resources<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><ul className="space-y-3 text-sm font-medium">{["Community", "Support", "Documentation"].map((item) => (<li key={item} className="hover:text-[#005EB8] cursor-pointer transition-colors">{item}</li>))}</ul></div>
-          <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">Get in touch!<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><ul className="space-y-4 text-sm"><li className="flex gap-3"><MapPin size={18} className="text-[#005EB8] flex-shrink-0" /> <span className="flex-1">Chennai, Tamil Nadu</span></li><li className="flex gap-3"><Mail size={18} className="text-[#005EB8] flex-shrink-0" /> iqmathindia@gmail.com</li></ul></div>
+          <div><h4 className="text-white text-lg font-bold mb-6 relative pb-2 inline-block">Get in touch!<span className="absolute bottom-0 left-0 w-8 h-1 bg-[#005EB8] rounded-full"></span></h4><ul className="space-y-4 text-sm"><li className="flex gap-3"><MapPin size={18} className="text-[#005EB8] flex-shrink-0" /> <span className="flex-1">Chennai - 600 119, Tamil Nadu</span></li><li className="flex gap-3"><Mail size={18} className="text-[#005EB8] flex-shrink-0" /> info@stjosephs.ac.in</li></ul></div>
         </div>
-        <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500"><p>Copyright © 2023 iQmath All Rights Reserved.</p></div>
+        <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500"><p>Copyright © 2025 St. Joseph's College of Engineering. All Rights Reserved.</p></div>
       </footer>
 
       {/* SCROLL TO TOP */}

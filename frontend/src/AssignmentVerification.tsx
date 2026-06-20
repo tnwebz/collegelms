@@ -30,7 +30,7 @@ const AssignmentVerification = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE_URL}/instructor/assignments`, {
+      const res = await axios.get(`${API_BASE_URL}/staff/assignments`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setData(res.data);
@@ -44,7 +44,7 @@ const AssignmentVerification = () => {
   const verifyAssignment = async (submissionId: number) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE_URL}/instructor/verify-assignment/${submissionId}`, {}, {
+      await axios.post(`${API_BASE_URL}/staff/verify-assignment/${submissionId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -201,11 +201,11 @@ const AssignmentVerification = () => {
             position: "fixed", top: "20px", right: "20px", 
             background: "white", padding: "16px 24px", borderRadius: "12px", 
             boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)", 
-            borderLeft: `6px solid ${toast.type === "success" ? "#87C232" : "#ef4444"}`,
+            borderLeft: `6px solid ${toast.type === "success" ? "#94A3B8" : "#ef4444"}`,
             display: "flex", alignItems: "center", gap: "12px", zIndex: 9999,
             animation: "slideIn 0.3s ease-out"
         }}>
-            {toast.type === "success" ? <CheckCircle size={24} color="#87C232" /> : <AlertTriangle size={24} color="#ef4444" />}
+            {toast.type === "success" ? <CheckCircle size={24} color="#94A3B8" /> : <AlertTriangle size={24} color="#ef4444" />}
             <div>
                 <h4 style={{ margin: "0", fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
                     {toast.type === "success" ? "Success" : "Error"}

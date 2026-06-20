@@ -56,8 +56,8 @@ const Login = () => {
 
   const [formData, setFormData] = useState({ email: "", password: "", name: "" });
 
-  const activeBg = isSignUp ? "bg-[#87C232]" : "bg-[#005EB8]";
-  const activeText = isSignUp ? "text-[#87C232]" : "text-[#005EB8]";
+  const activeBg = isSignUp ? "bg-[#94A3B8]" : "bg-[#005EB8]";
+  const activeText = isSignUp ? "text-[#94A3B8]" : "text-[#005EB8]";
 
   // ✅ API URL FROM ENV
   const API_URL = API_BASE_URL;
@@ -208,7 +208,7 @@ const Login = () => {
 
         const res = await axios.post(`${API_URL}/login`, loginParams);
 
-        if (res.data.role !== "student") {
+        if (res.data.role !== "STUDENT") {
           triggerToast("Please use the Admin Portal for Instructor access.", "error");
           setLoading(false);
           return;
@@ -267,7 +267,7 @@ const Login = () => {
             <div className="w-full max-w-[350px] space-y-4">
               <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#005EB8] focus-within:ring-opacity-50 transition-all shadow-sm">
                 <Mail className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                <input type="email" name="email" placeholder="Email Address" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
+                <input type="text" name="email" placeholder="Email or Login ID" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
               </div>
               <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#005EB8] focus-within:ring-opacity-50 transition-all shadow-sm">
                 <Lock className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
@@ -279,112 +279,24 @@ const Login = () => {
             <p className="mt-4 text-xs text-slate-400 font-medium cursor-pointer hover:underline self-end mr-2 lg:mr-8">Forgot Password?</p>
             <button type="submit" disabled={loading} className={`mt-6 w-full max-w-[350px] py-3.5 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} hover:opacity-90`}>{loading ? "Signing In..." : "Sign In"} <ArrowRight size={18} /></button>
 
-            {/* MOBILE ONLY SWITCH */}
-            <div className="mt-8 lg:hidden">
-              <p className="text-sm text-slate-500">Don't have an account? <span onClick={() => setIsSignUp(true)} className="font-bold text-[#005EB8] cursor-pointer">Sign Up</span></p>
-            </div>
+
           </form>
         </div>
 
         {/* ============================ */}
-        {/* 📝 SIGN UP FORM (RIGHT)      */}
-        {/* ============================ */}
-        {/* Mobile: Show if signUp. Desktop: Always present but hidden via opacity/transform logic */}
-        <div className={`
-            lg:absolute lg:top-0 lg:left-0 lg:w-1/2 lg:h-full lg:transition-all lg:duration-700 lg:ease-in-out lg:z-10
-            ${isSignUp ? 'flex w-full h-full lg:translate-x-full lg:opacity-100 lg:z-30' : 'hidden lg:flex lg:opacity-0 lg:pointer-events-none'}
-        `}>
-
-          {/* STATE A: DETAILS FORM (Before OTP) */}
-          {!showOtpInput ? (
-            <form onSubmit={handleAuth} className="bg-[#F8FAFC] flex flex-col items-center justify-center w-full h-full px-8 py-10 lg:px-12 text-center">
-              <h1 className={`text-3xl font-bold mb-2 ${activeText}`}>Create Account</h1>
-              <p className="text-slate-400 text-sm mb-6">Enter details to verify & join</p>
-
-              <div className="w-full max-w-[350px] space-y-4">
-                <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#87C232] shadow-sm">
-                  <User className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                  <input type="text" name="name" placeholder="Full Name" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
-                </div>
-                <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#87C232] shadow-sm">
-                  <Mail className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                  <input type="email" name="email" placeholder="Email Address" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
-                </div>
-                <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#87C232] shadow-sm">
-                  <Lock className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                  <input type={showPassword ? "text" : "password"} name="password" placeholder="Create Password" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
-                </div>
-                {/* 📱 PHONE INPUT FOR OTP */}
-                <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#87C232] shadow-sm">
-                  <Smartphone className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                  <input type="tel" value={phone} placeholder="Phone (e.g. 9999999999)" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={(e) => setPhone(e.target.value)} />
-                </div>
-              </div>
-
-              <button type="submit" className={`mt-8 w-full max-w-[350px] py-3.5 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} hover:opacity-90`}>
-                {loading ? "Sending OTP..." : "Get OTP & Sign Up"} <CheckCircle size={18} />
-              </button>
-
-              {/* MOBILE ONLY SWITCH */}
-              <div className="mt-8 lg:hidden">
-                <p className="text-sm text-slate-500">Already a member? <span onClick={() => setIsSignUp(false)} className="font-bold text-[#005EB8] cursor-pointer">Sign In</span></p>
-              </div>
-            </form>
-          ) : (
-            /* STATE B: OTP VERIFICATION FORM */
-            <div className="bg-[#F8FAFC] flex flex-col items-center justify-center h-full px-8 py-10 lg:px-12 text-center w-full animate-fade-in">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <MessageSquare className="text-[#87C232]" size={32} />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">Verify OTP</h2>
-              <p className="text-slate-500 text-sm mb-6">Enter the 6-digit code sent to {phone}</p>
-
-              <div className="w-full max-w-[250px] mb-6">
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="123456"
-                  maxLength={6}
-                  className="w-full text-center text-3xl font-bold tracking-widest py-3 border-b-2 border-slate-300 focus:border-[#87C232] outline-none bg-transparent"
-                />
-              </div>
-
-              <button onClick={verifyOtp} disabled={loading} className={`w-full max-w-[250px] py-3.5 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} hover:opacity-90`}>
-                {loading ? "Verifying..." : "Verify & Create"}
-              </button>
-              <button onClick={() => setShowOtpInput(false)} className="mt-4 text-xs text-slate-400 font-bold hover:underline">Change Number</button>
-            </div>
-          )}
-        </div>
-
-        {/* ============================ */}
-        {/* 🎭 SLIDING OVERLAY PANEL     */}
+        {/* 🎭 RIGHT DECORATIVE PANEL     */}
         {/* ============================ */}
         {/* HIDDEN ON MOBILE */}
-        <div className={`hidden lg:block absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-700 ease-in-out z-40 ${isSignUp ? '-translate-x-full rounded-r-[20px] rounded-l-[100px]' : 'rounded-l-[20px] rounded-r-[100px]'}`}>
-          <div className={`relative -left-full h-full w-[200%] transition-transform duration-700 ease-in-out ${activeBg} text-white ${isSignUp ? 'translate-x-1/2' : 'translate-x-0'}`}>
-
-            {/* OVERLAY: RIGHT (Prompts Sign Up) */}
-            <div className={`absolute top-0 right-0 w-1/2 h-full flex flex-col items-center justify-center px-12 text-center transition-transform duration-700 ease-in-out ${isSignUp ? 'translate-x-[20%]' : 'translate-x-0'}`}>
-              <h1 className="text-4xl font-extrabold mb-4 leading-tight">Learn Without <br />Limits.</h1>
-              <p className="text-sm font-medium mb-8 italic opacity-90 max-w-[320px]">“Education is the passport to the future, for tomorrow belongs to those who prepare for it today.”</p>
-              <button onClick={() => setIsSignUp(true)} className="px-8 py-3 bg-transparent border-2 border-white rounded-xl font-bold text-sm tracking-wide hover:bg-white hover:text-slate-900 transition-all active:scale-95">Create Account</button>
-            </div>
-
-            {/* OVERLAY: LEFT (Prompts Sign In) */}
-            <div className={`absolute top-0 left-0 w-1/2 h-full flex flex-col items-center justify-center px-12 text-center transition-transform duration-700 ease-in-out ${isSignUp ? 'translate-x-0' : '-translate-x-[20%]'}`}>
-              <h1 className="text-4xl font-extrabold mb-4">Already a <br />Member?</h1>
-              <p className="text-sm font-medium mb-8 opacity-90 max-w-[320px]">Sign in to your dashboard and continue your learning journey.</p>
-              <button onClick={() => setIsSignUp(false)} className="px-8 py-3 bg-transparent border-2 border-white rounded-xl font-bold text-sm tracking-wide hover:bg-white hover:text-slate-900 transition-all active:scale-95">Sign In</button>
-            </div>
-
+        <div className="hidden lg:block absolute top-0 left-1/2 w-1/2 h-full overflow-hidden z-40 rounded-l-[20px] rounded-r-[100px]">
+          <div className="h-full w-full bg-[#005EB8] text-white flex flex-col items-center justify-center px-12 text-center">
+            <h1 className="text-4xl font-extrabold mb-4 leading-tight">Learn Without <br />Limits.</h1>
+            <p className="text-sm font-medium mb-8 italic opacity-90 max-w-[320px]">“Education is the passport to the future, for tomorrow belongs to those who prepare for it today.”</p>
           </div>
         </div>
 
       </div>
 
-      {toast.show && (<div className="fixed top-5 right-5 z-50 bg-white px-6 py-4 rounded-xl shadow-2xl border-l-4 border-l-current flex items-center gap-3 animate-fade-in" style={{ borderColor: toast.type === "success" ? "#87C232" : "#ef4444" }}>{toast.type === "success" ? <CheckCircle className="text-[#87C232]" size={24} /> : <AlertCircle className="text-red-500" size={24} />}<div><h4 className="font-bold text-slate-800 text-sm">{toast.type === "success" ? "Success" : "Error"}</h4><p className="text-slate-500 text-xs">{toast.message}</p></div><button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-slate-400 hover:text-slate-600"><X size={16} /></button></div>)}
+      {toast.show && (<div className="fixed top-5 right-5 z-50 bg-white px-6 py-4 rounded-xl shadow-2xl border-l-4 border-l-current flex items-center gap-3 animate-fade-in" style={{ borderColor: toast.type === "success" ? "#94A3B8" : "#ef4444" }}>{toast.type === "success" ? <CheckCircle className="text-[#94A3B8]" size={24} /> : <AlertCircle className="text-red-500" size={24} />}<div><h4 className="font-bold text-slate-800 text-sm">{toast.type === "success" ? "Success" : "Error"}</h4><p className="text-slate-500 text-xs">{toast.message}</p></div><button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-slate-400 hover:text-slate-600"><X size={16} /></button></div>)}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import API_BASE_URL from './config';
@@ -95,7 +95,7 @@ const CourseBuilder = () => {
     };
 
     const brand = {
-        blue: "#005EB8", green: "#87C232", bg: "#E2E8F0",
+        blue: "#005EB8", green: "#94A3B8", bg: "#E2E8F0",
         cardBg: "#F8FAFC", border: "#cbd5e1", textMain: "#1e293b", textLight: "#64748b"
     };
 
@@ -435,7 +435,7 @@ const CourseBuilder = () => {
                         <button onClick={() => navigate(`/dashboard/course/${courseId}/preview`)} className="px-3 py-2 md:px-5 md:py-2.5 bg-white text-[#005EB8] border border-[#005EB8] rounded-lg font-bold hover:bg-blue-50 transition-colors whitespace-nowrap">
                             Preview
                         </button>
-                        <button onClick={handlePublish} disabled={isPublishing} className="px-3 py-2 md:px-6 md:py-2.5 rounded-lg border-none bg-[#87C232] text-white font-extrabold shadow-md hover:bg-[#76a928] transition-all disabled:opacity-50 whitespace-nowrap">
+                        <button onClick={handlePublish} disabled={isPublishing} className="px-3 py-2 md:px-6 md:py-2.5 rounded-lg border-none bg-[#94A3B8] text-white font-extrabold shadow-md hover:bg-[#76a928] transition-all disabled:opacity-50 whitespace-nowrap">
                             {isPublishing ? "..." : "Publish"}
                         </button>
                     </div>
@@ -667,7 +667,7 @@ const CourseBuilder = () => {
                     <button
                         onClick={handlePublish}
                         disabled={isPublishing}
-                        className="px-3 py-2 md:px-6 md:py-2.5 rounded-lg border-none bg-[#87C232] text-white font-extrabold shadow-md hover:bg-[#76a928] transition-all disabled:opacity-50 whitespace-nowrap text-xs md:text-sm"
+                        className="px-3 py-2 md:px-6 md:py-2.5 rounded-lg border-none bg-[#94A3B8] text-white font-extrabold shadow-md hover:bg-[#76a928] transition-all disabled:opacity-50 whitespace-nowrap text-xs md:text-sm"
                     >
                         {isPublishing ? "Publishing..." : "Publish Course"}
                     </button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import axios from "axios";
 import { Lock, Save, CheckCircle, AlertCircle, X } from "lucide-react"; // ✅ Added Icons
 import API_BASE_URL from './config';
@@ -20,7 +20,7 @@ const InstructorSettings = () => {
   // 🎨 PROFESSIONAL THEME
   const brand = { 
     blue: "#005EB8", 
-    green: "#87C232",
+    green: "#94A3B8",
     cardBg: "#F8FAFC", 
     border: "#cbd5e1",
     textMain: "#1e293b",

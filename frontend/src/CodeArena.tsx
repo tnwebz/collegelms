@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import axios from "axios";
 import API_BASE_URL from './config';
 import {
@@ -209,7 +209,7 @@ const CodeArena = () => {
                                 <div className="overflow-hidden">
                                     <h3 className="font-bold text-[#1e293b] text-base md:text-lg truncate">{test.title}</h3>
                                     <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-[#64748b] mt-1 font-medium">
-                                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[#87C232] rounded-full"></span> {test.time_limit} mins</span>
+                                        <span className="flex items-center gap-1"><span className="w-2 h-2 bg-[#94A3B8] rounded-full"></span> {test.time_limit} mins</span>
                                         <span className="bg-[#E2E8F0] px-2 py-0.5 rounded text-xs font-mono text-[#475569] border border-[#cbd5e1] truncate max-w-[150px]">Key: {test.pass_key}</span>
                                     </div>
                                 </div>
@@ -346,7 +346,7 @@ const CodeArena = () => {
 
                             <div className="p-6 border-t border-[#cbd5e1] flex justify-end gap-3 sticky bottom-0 bg-[#F8FAFC] rounded-b-2xl">
                                 <button onClick={() => setShowModal(false)} className="px-6 py-3 rounded-xl font-bold text-[#64748b] hover:bg-white border border-transparent hover:border-[#cbd5e1] transition-all">Cancel</button>
-                                <button onClick={handleSaveChallenge} disabled={loading} className="px-8 py-3 bg-[#87C232] text-white rounded-xl font-bold hover:bg-[#76a82b] flex items-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-95 disabled:opacity-70">
+                                <button onClick={handleSaveChallenge} disabled={loading} className="px-8 py-3 bg-[#94A3B8] text-white rounded-xl font-bold hover:bg-[#76a82b] flex items-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-95 disabled:opacity-70">
                                     {loading ? "Saving..." : <><Check size={18} /> Save Complete Challenge</>}
                                 </button>
                             </div>
@@ -418,11 +418,11 @@ const CodeArena = () => {
                     position: "fixed", top: "20px", right: "20px",
                     background: "white", padding: "16px 24px", borderRadius: "12px",
                     boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)",
-                    borderLeft: `6px solid ${toast.type === "success" ? "#87C232" : "#ef4444"}`,
+                    borderLeft: `6px solid ${toast.type === "success" ? "#94A3B8" : "#ef4444"}`,
                     display: "flex", alignItems: "center", gap: "12px", zIndex: 9999,
                     animation: "slideIn 0.3s ease-out"
                 }}>
-                    {toast.type === "success" ? <CheckCircle size={24} color="#87C232" /> : <AlertTriangle size={24} color="#ef4444" />}
+                    {toast.type === "success" ? <CheckCircle size={24} color="#94A3B8" /> : <AlertTriangle size={24} color="#ef4444" />}
                     <div>
                         <h4 style={{ margin: "0", fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
                             {toast.type === "success" ? "Success" : "Error"}

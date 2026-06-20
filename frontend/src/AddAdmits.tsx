@@ -7,9 +7,17 @@ import {
 } from "lucide-react";
 
 // Types
+interface CourseBatch {
+  id: number;
+  semester: number;
+  section: string;
+  status: string;
+}
+
 interface Course {
   id: number;
   title: string;
+  course_batches?: CourseBatch[];
 }
 
 const AddAdmits = () => {
@@ -19,12 +27,12 @@ const AddAdmits = () => {
   // Single Admit State
   const [singleName, setSingleName] = useState("");
   const [singleEmail, setSingleEmail] = useState("");
-  const [selectedCourseIds, setSelectedCourseIds] = useState<number[]>([]);
+  const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
   const [singleLoading, setSingleLoading] = useState(false);
 
   // Bulk Admit State
   const [bulkFile, setBulkFile] = useState<File | null>(null);
-  const [bulkCourseId, setBulkCourseId] = useState<number | null>(null);
+  const [bulkBatchId, setBulkBatchId] = useState<number | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
   // Create Instructor Modal State
@@ -75,7 +83,7 @@ const AddAdmits = () => {
 
   const handleSingleAdmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedCourseIds.length === 0) return triggerToast("Please select at least one course.", "error");
+    if (selectedBatchIds.length === 0) return triggerToast("Please select at least one batch.", "error");
     setSingleLoading(true);
 
     // ✅ Generate Random Password Frontend-side
@@ -87,7 +95,7 @@ const AddAdmits = () => {
       const payload = {
         full_name: singleName,
         email: singleEmail,
-        course_ids: selectedCourseIds,
+        batch_ids: selectedBatchIds,
         password: generatedPassword
       };
 
@@ -95,17 +103,17 @@ const AddAdmits = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       triggerToast(`✅ Account Created & Email Sent to ${singleEmail}`, "success");
-      setSingleName(""); setSingleEmail(""); setSelectedCourseIds([]);
+      setSingleName(""); setSingleEmail(""); setSelectedBatchIds([]);
     } catch (err: any) { triggerToast(`Error: ${err.response?.data?.detail || "Failed"}`, "error"); }
     finally { setSingleLoading(false); }
   };
 
   const handleBulkAdmit = async () => {
-    if (!bulkFile || !bulkCourseId) return triggerToast("Missing file or course selection.", "error");
+    if (!bulkFile || !bulkBatchId) return triggerToast("Missing file or batch selection.", "error");
     setBulkLoading(true);
     const formData = new FormData();
     formData.append("file", bulkFile);
-    formData.append("course_id", bulkCourseId.toString());
+    formData.append("batch_id", bulkBatchId.toString());
     try {
       const token = localStorage.getItem("token");
       await axios.post(`${API_BASE_URL}/admin/bulk-admit`, formData, {
@@ -117,9 +125,9 @@ const AddAdmits = () => {
     finally { setBulkLoading(false); }
   };
 
-  const toggleCourseSelection = (id: number) => {
-    if (selectedCourseIds.includes(id)) { setSelectedCourseIds(selectedCourseIds.filter(cid => cid !== id)); }
-    else { setSelectedCourseIds([...selectedCourseIds, id]); }
+  const toggleBatchSelection = (id: number) => {
+    if (selectedBatchIds.includes(id)) { setSelectedBatchIds(selectedBatchIds.filter(bid => bid !== id)); }
+    else { setSelectedBatchIds([...selectedBatchIds, id]); }
   };
 
   const downloadTemplate = () => {
@@ -134,16 +142,9 @@ const AddAdmits = () => {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-10 animate-fade-in">
 
-      {/* HEADER WITH NEW INSTRUCTOR BUTTON */}
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
         <h1 className="text-2xl md:text-3xl font-extrabold text-[#1e293b] m-0">Add Admits</h1>
-
-        <button
-          onClick={() => setShowInstructorModal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-[#1e293b] text-white rounded-xl font-bold text-sm hover:bg-slate-700 transition-colors shadow-lg shadow-slate-300"
-        >
-          <Shield size={18} /> Create Instructor
-        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
@@ -178,18 +179,28 @@ const AddAdmits = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Assign Free Courses</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Assign to Batches</label>
               <div className="border border-slate-200 rounded-xl max-h-[150px] overflow-y-auto p-2 bg-[#f8fafc]">
                 {courses.map(course => (
-                  <div
-                    key={course.id}
-                    onClick={() => toggleCourseSelection(course.id)}
-                    className={`p-2.5 mb-1 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${selectedCourseIds.includes(course.id) ? "bg-[#e0f2fe]" : "hover:bg-slate-100"}`}
-                  >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedCourseIds.includes(course.id) ? "bg-[#005EB8] border-[#005EB8]" : "bg-white border-slate-300"}`}>
-                      {selectedCourseIds.includes(course.id) && <CheckCircle size={10} color="white" />}
-                    </div>
-                    <span className={`text-sm font-semibold ${selectedCourseIds.includes(course.id) ? "text-[#005EB8]" : "text-slate-700"}`}>{course.title}</span>
+                  <div key={course.id} className="mb-2">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 px-2">{course.title}</div>
+                    {(course.course_batches || []).filter(b => b.status === "ACTIVE").map(batch => (
+                      <div
+                        key={batch.id}
+                        onClick={() => toggleBatchSelection(batch.id)}
+                        className={`p-2.5 mb-1 rounded-lg cursor-pointer flex items-center gap-3 transition-colors ${selectedBatchIds.includes(batch.id) ? "bg-[#e0f2fe]" : "hover:bg-slate-100"}`}
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedBatchIds.includes(batch.id) ? "bg-[#005EB8] border-[#005EB8]" : "bg-white border-slate-300"}`}>
+                          {selectedBatchIds.includes(batch.id) && <CheckCircle size={10} color="white" />}
+                        </div>
+                        <span className={`text-sm font-semibold ${selectedBatchIds.includes(batch.id) ? "text-[#005EB8]" : "text-slate-700"}`}>
+                          Sem {batch.semester} - Sec {batch.section}
+                        </span>
+                      </div>
+                    ))}
+                    {(!course.course_batches || course.course_batches.filter(b => b.status === "ACTIVE").length === 0) && (
+                       <div className="text-xs text-slate-400 px-2 italic">No active batches</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -209,7 +220,7 @@ const AddAdmits = () => {
           <div className="border-b border-slate-100 pb-5 mb-6 flex justify-between items-start">
             <div>
               <h2 className="text-xl font-bold flex items-center gap-2 text-[#1e293b]">
-                <FileSpreadsheet size={24} className="text-[#87C232]" /> Bulk Upload
+                <FileSpreadsheet size={24} className="text-[#94A3B8]" /> Bulk Upload
               </h2>
               <p className="text-slate-500 text-sm mt-1.5 font-medium">Upload Excel to onboard a whole batch.</p>
             </div>
@@ -222,15 +233,21 @@ const AddAdmits = () => {
           </div>
           <div className="flex flex-col gap-6 flex-1">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Batch Course</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Batch</label>
               <div className="relative">
                 <select
-                  value={bulkCourseId || ""}
-                  onChange={(e) => setBulkCourseId(Number(e.target.value))}
-                  className="w-full p-3 pl-4 text-sm rounded-lg border border-slate-300 bg-white outline-none focus:border-[#87C232] focus:ring-1 focus:ring-[#87C232] transition-all appearance-none text-slate-700 font-medium"
+                  value={bulkBatchId || ""}
+                  onChange={(e) => setBulkBatchId(Number(e.target.value))}
+                  className="w-full p-3 pl-4 text-sm rounded-lg border border-slate-300 bg-white outline-none focus:border-[#94A3B8] focus:ring-1 focus:ring-[#94A3B8] transition-all appearance-none text-slate-700 font-medium"
                 >
-                  <option value="">-- Choose Course for Batch --</option>
-                  {courses.map(c => (<option key={c.id} value={c.id}>{c.title}</option>))}
+                  <option value="">-- Choose Batch for Students --</option>
+                  {courses.flatMap(c => 
+                    (c.course_batches || []).filter(b => b.status === "ACTIVE").map(b => (
+                      <option key={b.id} value={b.id}>
+                        {c.title} (Sem {b.semester} - Sec {b.section})
+                      </option>
+                    ))
+                  )}
                 </select>
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-400">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
@@ -246,7 +263,7 @@ const AddAdmits = () => {
               />
               {bulkFile ? (
                 <div className="text-center animate-fade-in">
-                  <FileSpreadsheet size={48} className="text-[#87C232] mx-auto mb-2" />
+                  <FileSpreadsheet size={48} className="text-[#94A3B8] mx-auto mb-2" />
                   <div className="font-bold text-slate-700">{bulkFile.name}</div>
                   <div className="text-xs text-slate-400 mt-1">Click to change file</div>
                 </div>
@@ -263,7 +280,7 @@ const AddAdmits = () => {
             <button
               disabled={bulkLoading}
               onClick={handleBulkAdmit}
-              className="w-full py-3.5 bg-[#87C232] text-white rounded-xl font-bold text-sm hover:bg-[#76a928] transition-all shadow-md shadow-green-100 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-[#94A3B8] text-white rounded-xl font-bold text-sm hover:bg-[#76a928] transition-all shadow-md shadow-green-100 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {bulkLoading ? "Processing..." : "Process Batch Upload"}
             </button>

@@ -16,10 +16,20 @@ import AddAdmits from "./AddAdmits";
 import CoursePreview from "./CoursePreview";
 import CodeArena from "./CodeArena"; 
 import Dashboard from "./Dashboard"; 
-import InstructorSettings from "./InstructorSettings"; 
+import InstructorSettings from "./InstructorSettings";
 import StudentManagement from "./StudentManagement";
 import Messages from "./Messages";
 import CodingCourseManager from "./CodingCourseManager";
+import StaffStudentManagement from "./StaffStudentManagement";
+import BatchManagement from "./BatchManagement";
+import StaffManagement from "./StaffManagement";
+import AdminDashboardLayout from "./AdminDashboardLayout";
+
+const StudentManagementWrapper = () => {
+  const role = localStorage.getItem("role");
+  return role === "ADMIN" ? <StudentManagement /> : <StaffStudentManagement />;
+};
+
 // --- Modified CourseList Component ---
 const CourseList = () => {
   const [courses, setCourses] = useState([]);
@@ -125,11 +135,11 @@ const CourseList = () => {
             position: "fixed", top: "20px", right: "20px", 
             background: "white", padding: "16px 24px", borderRadius: "12px", 
             boxShadow: "0 10px 30px -5px rgba(0,0,0,0.15)", 
-            borderLeft: `6px solid ${toast.type === "success" ? "#87C232" : "#ef4444"}`,
+            borderLeft: `6px solid ${toast.type === "success" ? "#94A3B8" : "#ef4444"}`,
             display: "flex", alignItems: "center", gap: "12px", zIndex: 9999,
             animation: "slideIn 0.3s ease-out"
         }}>
-            {toast.type === "success" ? <CheckCircle size={24} color="#87C232" /> : <AlertTriangle size={24} color="#ef4444" />}
+            {toast.type === "success" ? <CheckCircle size={24} color="#94A3B8" /> : <AlertTriangle size={24} color="#ef4444" />}
             <div>
                 <h4 style={{ margin: "0", fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
                     {toast.type === "success" ? "Success" : "Error"}
@@ -145,7 +155,24 @@ const CourseList = () => {
   );
 };
 
-function App() {
+
+
+const ProtectedRoute = ({ children, allowedRoles }: { children: any, allowedRoles: string[] }) => {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  
+  if (!token) return <Navigate to="/login" replace />;
+  
+  if (!allowedRoles.includes(role || "")) {
+    if (role === "ADMIN") return <Navigate to="/admin-dashboard" />;
+    if (role === "STAFF") return <Navigate to="/dashboard" />;
+    return <Navigate to="/student-dashboard" />;
+  }
+  
+  return children;
+};
+
+export default function App() {
   return (
     <Router>
       <Routes>
@@ -153,9 +180,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin-login" element={<AdminLogin />} />
 
-        <Route path="/dashboard" element={<ProtectedRoute requiredRole="instructor"><DashboardLayout /></ProtectedRoute>}>
+        {/* STAFF ROUTES */}
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["STAFF", "ADMIN"]}><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} /> 
           <Route path="courses" element={<CourseList />} />
+          <Route path="batches" element={<BatchManagement />} />
           <Route path="create-course" element={<CreateCourse />} />
           <Route path="course/:courseId/builder" element={<CourseBuilder />} />
           <Route path="assignments" element={<AssignmentManager />} />
@@ -163,24 +192,21 @@ function App() {
           <Route path="course/:courseId/preview" element={<CodingCourseManager />} />
           <Route path="course/:courseId/CoursePreview" element={<CoursePreview />} />
           <Route path="code-arena" element={<CodeArena />} />
-          <Route path="students" element={<StudentManagement />} />
+          <Route path="students" element={<StudentManagementWrapper />} />
           <Route path="settings" element={<InstructorSettings />} />
           <Route path="messages" element={<Messages />} />
         </Route>
+
+        {/* ADMIN ROUTES */}
+        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminDashboardLayout /></ProtectedRoute>}>
+          <Route index element={<Dashboard />} /> 
+          <Route path="staff-management" element={<StaffManagement />} />
+          <Route path="settings" element={<InstructorSettings />} />
+        </Route>
         
-        <Route path="/student-dashboard" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
-        <Route path="/course/:courseId/player" element={<ProtectedRoute requiredRole="student"><CoursePlayer /></ProtectedRoute>} />
+        <Route path="/student-dashboard" element={<ProtectedRoute allowedRoles={["STUDENT"]}><StudentDashboard /></ProtectedRoute>} />
+        <Route path="/course/:courseId/player" element={<ProtectedRoute allowedRoles={["STUDENT"]}><CoursePlayer /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
 }
-
-const ProtectedRoute = ({ children, requiredRole }: { children: any, requiredRole?: string }) => {
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-  if (!token) return <Navigate to="/login" replace />;
-  if (requiredRole && role !== requiredRole) { return role === "instructor" ? <Navigate to="/dashboard" /> : <Navigate to="/student-dashboard" />; }
-  return children;
-};
-
-export default App;
