@@ -26,7 +26,7 @@ const AdminDashboardLayout = () => {
         <div className="p-6 border-b border-slate-100 flex items-center justify-center">
           <div className="flex flex-col items-center">
             <BrandLogo size="md" />
-            <span className="text-[11px] text-[#005EB8] font-bold uppercase tracking-widest mt-1">ADMIN</span>
+            <span className="text-[11px] text-[#005EB8] font-bold uppercase tracking-widest mt-1">HOD</span>
           </div>
         </div>
 
@@ -66,7 +66,7 @@ const AdminDashboardLayout = () => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* HEADER */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
-          <h2 className="text-lg font-bold text-slate-800 m-0">Super Admin Portal</h2>
+          <h2 className="text-lg font-bold text-slate-800 m-0">HOD Portal</h2>
           <div className="flex items-center gap-4 relative">
              <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -78,8 +78,8 @@ const AdminDashboardLayout = () => {
              {showProfileMenu && (
                <div className="absolute top-10 right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden py-1 z-50 animate-in fade-in slide-in-from-top-2">
                  <div className="px-4 py-2 border-b border-slate-100">
-                   <p className="text-sm font-bold text-slate-800 m-0">Admin User</p>
-                   <p className="text-xs text-slate-500 m-0">admin@stjosephs.edu</p>
+                   <p className="text-sm font-bold text-slate-800 m-0">HOD User</p>
+                   <p className="text-xs text-slate-500 m-0">hod@stjosephs.edu</p>
                  </div>
                  <button onClick={() => { setShowProfileMenu(false); navigate("/admin-dashboard/settings"); }} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors border-none bg-transparent cursor-pointer flex items-center gap-2">
                    <Settings size={16} /> Settings

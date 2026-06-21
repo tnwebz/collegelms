@@ -3,13 +3,16 @@ import { authenticate, requireInstructor } from '../middleware/auth';
 import {
   toggleContentComplete, updateContentItem, deleteContentItem, 
   updateModule, deleteModule, reorderModules, reorderContentItems, 
-  submitAssignment, createContentItem 
+  submitAssignment, createContentItem, createDirectVideoContentItem, createDirectDocumentContentItem
 } from '../controllers/content.controller';
+import { uploadVideo, uploadDocument } from '../middleware/uploadMiddleware';
 
 const router = Router();
 
 router.post('/content/:id/complete', authenticate, toggleContentComplete);
 router.post('/content', requireInstructor as any, createContentItem);
+router.post('/content/video', requireInstructor as any, uploadVideo, createDirectVideoContentItem as any);
+router.post('/content/document', requireInstructor as any, uploadDocument, createDirectDocumentContentItem as any);
 router.patch('/content/:id', requireInstructor as any, updateContentItem);
 router.delete('/content/:id', requireInstructor as any, deleteContentItem);
 

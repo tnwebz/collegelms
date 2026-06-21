@@ -244,42 +244,130 @@ export const admitToBatch = async (req: AuthRequest, res: Response) => {
 
 export const getStaffAssignments = async (req: AuthRequest, res: Response) => {
   try {
-    const batches = await prisma.course_batches.findMany({
-      where: { courses: { staff_id: req.user.id } },
+    // 1. Fetch all courses for the staff, including batches, students, standard content items, and batch-specific content items
+    const courses = await prisma.courses.findMany({
+      where: { staff_id: req.user.id },
       include: {
-        courses: true,
-        batch_content: {
-          where: { type: 'ASSIGNMENT' },
+        course_batches: {
           include: {
-            submissions: {
-              include: { users: true }
+            enrollments: true,
+            batch_content: {
+              where: { type: 'ASSIGNMENT' },
+              include: {
+                submissions: { include: { users: true } }
+              }
+            }
+          }
+        },
+        modules: {
+          include: {
+            content_items: {
+              where: { type: { in: ['assignment', 'quiz', 'QUIZ'] } },
+              include: {
+                submissions: { include: { users: true } }
+              }
             }
           }
         }
       }
     });
 
-    const result = batches.filter(b => b.batch_content.length > 0).map(batch => ({
-      course_id: batch.id, // mapped to course_id to reuse UI state
-      course_title: `${batch.courses?.title} (Sem ${batch.semester} - Sec ${batch.section})`,
-      assignment_tasks: batch.batch_content.map(task => {
-        const submitted = task.submissions.map(sub => ({
-          submission_id: sub.id,
-          student_id: sub.user_id,
-          student_name: sub.users?.full_name,
-          drive_search_link: sub.drive_link,
-          status: sub.status === 'Verified' ? 'Verified' : 'Pending',
-          submitted_at: sub.submitted_at?.toISOString().split('T')[0]
-        }));
+    const result: any[] = [];
 
-        return {
-          task_id: task.id,
-          task_title: task.title,
-          submitted,
-          pending: [] 
-        };
-      })
-    }));
+    courses.forEach(course => {
+      const standardTasks = course.modules.flatMap(m => m.content_items);
+      const allSubmissionsMap = new Map();
+
+      // Collect all standard submissions
+      standardTasks.forEach(task => {
+        task.submissions.forEach(sub => {
+          allSubmissionsMap.set(sub.id, { ...sub, task_id: task.id, task_title: task.title });
+        });
+      });
+
+      const processedSubmissionIds = new Set();
+
+      // Process each batch
+      course.course_batches.forEach(batch => {
+        const batchStudentIds = new Set(batch.enrollments.map(e => e.student_id));
+        const batchTasksMap = new Map();
+
+        // Add standard tasks filtered by this batch's students
+        standardTasks.forEach(task => {
+          const batchSubmissions = task.submissions.filter(sub => batchStudentIds.has(sub.user_id));
+          if (batchSubmissions.length > 0) {
+            batchSubmissions.forEach(sub => processedSubmissionIds.add(sub.id));
+            batchTasksMap.set(`std-${task.id}`, {
+              task_id: task.id,
+              task_title: task.title,
+              submitted: batchSubmissions.map(sub => ({
+                submission_id: sub.id,
+                student_id: sub.user_id,
+                student_name: sub.users?.full_name,
+                drive_search_link: sub.drive_link,
+                status: sub.status === 'Verified' ? 'Verified' : 'Pending',
+                submitted_at: sub.submitted_at?.toISOString().split('T')[0]
+              })),
+              pending: []
+            });
+          }
+        });
+
+        // Add legacy batch-specific tasks
+        batch.batch_content.forEach(task => {
+          batchTasksMap.set(`batch-${task.id}`, {
+            task_id: task.id,
+            task_title: task.title,
+            submitted: task.submissions.map(sub => ({
+              submission_id: sub.id,
+              student_id: sub.user_id,
+              student_name: sub.users?.full_name,
+              drive_search_link: sub.drive_link,
+              status: sub.status === 'Verified' ? 'Verified' : 'Pending',
+              submitted_at: sub.submitted_at?.toISOString().split('T')[0]
+            })),
+            pending: []
+          });
+        });
+
+        if (batchTasksMap.size > 0) {
+          result.push({
+            course_id: `batch-${batch.id}`,
+            course_title: `${course.title} (Sem ${batch.semester} - Sec ${batch.section})`,
+            assignment_tasks: Array.from(batchTasksMap.values())
+          });
+        }
+      });
+
+      // Handle submissions not belonging to any active batch (Unassigned/Generic)
+      const unassignedTasksMap = new Map();
+      standardTasks.forEach(task => {
+        const unassignedSubmissions = task.submissions.filter(sub => !processedSubmissionIds.has(sub.id));
+        if (unassignedSubmissions.length > 0) {
+          unassignedTasksMap.set(`std-${task.id}`, {
+            task_id: task.id,
+            task_title: task.title,
+            submitted: unassignedSubmissions.map(sub => ({
+              submission_id: sub.id,
+              student_id: sub.user_id,
+              student_name: sub.users?.full_name,
+              drive_search_link: sub.drive_link,
+              status: sub.status === 'Verified' ? 'Verified' : 'Pending',
+              submitted_at: sub.submitted_at?.toISOString().split('T')[0]
+            })),
+            pending: []
+          });
+        }
+      });
+
+      if (unassignedTasksMap.size > 0) {
+        result.push({
+          course_id: `course-${course.id}-unassigned`,
+          course_title: `${course.title} (Unassigned / General)`,
+          assignment_tasks: Array.from(unassignedTasksMap.values())
+        });
+      }
+    });
 
     return res.json(result);
   } catch (error) {
@@ -293,11 +381,19 @@ export const verifyAssignment = async (req: AuthRequest, res: Response) => {
   try {
     const submission = await prisma.submissions.findUnique({
       where: { id: submissionId },
-      include: { batch_content: { include: { course_batches: { include: { courses: true } } } } }
+      include: { 
+        batch_content: { include: { course_batches: { include: { courses: true } } } },
+        content_items: { include: { modules: { include: { courses: true } } } }
+      }
     });
 
     if (!submission) return res.status(404).json({ detail: 'Not found' });
-    if (submission.batch_content?.course_batches?.courses?.staff_id !== req.user.id) {
+    
+    const staffIdFromBatch = submission.batch_content?.course_batches?.courses?.staff_id;
+    const staffIdFromCourse = submission.content_items?.modules?.courses?.staff_id;
+    const ownerStaffId = staffIdFromBatch || staffIdFromCourse;
+
+    if (ownerStaffId !== req.user.id) {
       return res.status(403).json({ detail: 'Unauthorized' });
     }
 

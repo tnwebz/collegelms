@@ -1,16 +1,25 @@
 import { Response } from 'express';
 import { prisma } from '../db';
 import { AuthRequest } from '../middleware/auth';
-import multer from 'multer';
+import { uploadDocument } from '../middleware/uploadMiddleware';
 
-const upload = multer({ storage: multer.memoryStorage() }).single('file');
-
-// POST /content/:id/complete — toggles progress on batch_content
+// POST /content/:id/complete — toggles progress on batch_content or content_items
 export const toggleContentComplete = async (req: AuthRequest, res: Response) => {
   const contentId = parseInt(req.params.id as string, 10);
   try {
+    const batchContentExists = await prisma.batch_content.findUnique({ where: { id: contentId } });
+    const contentItemExists = await prisma.content_items.findUnique({ where: { id: contentId } });
+
+    if (!batchContentExists && !contentItemExists) {
+      return res.status(404).json({ detail: 'Content not found' });
+    }
+
+    const whereClause = batchContentExists 
+      ? { user_id: req.user.id, batch_content_id: contentId }
+      : { user_id: req.user.id, content_item_id: contentId };
+
     const existing = await prisma.lesson_progress.findFirst({
-      where: { user_id: req.user.id, batch_content_id: contentId }
+      where: whereClause
     });
 
     if (existing) {
@@ -23,7 +32,8 @@ export const toggleContentComplete = async (req: AuthRequest, res: Response) => 
       await prisma.lesson_progress.create({
         data: {
           user_id: req.user.id,
-          batch_content_id: contentId,
+          batch_content_id: batchContentExists ? contentId : null,
+          content_item_id: !batchContentExists ? contentId : null,
           is_completed: true,
           completed_at: new Date(),
           violation_count: 0,
@@ -108,32 +118,48 @@ export const reorderContentItems = async (req: AuthRequest, res: Response) => {
 
 // POST /submit-assignment — now tracks against batch_content_id
 export const submitAssignment = async (req: AuthRequest, res: Response) => {
-  upload(req as any, res as any, async (err: any) => {
+  uploadDocument(req as any, res as any, async (err: any) => {
     if (err) {
+      console.error(err);
       return res.status(500).json({ detail: 'Upload error' });
     }
-    const { lesson_id } = req.body;
+    const { lesson_id, drive_link } = req.body;
+    
+    // Fallback: If no file uploaded, maybe it's a drive_link submission
     const file = (req as any).file;
-    if (!file) {
-      return res.status(400).json({ detail: 'File is required' });
+    if (!file && !drive_link) {
+      return res.status(400).json({ detail: 'File or Drive Link is required' });
     }
 
     const contentId = parseInt(lesson_id, 10);
+    const submissionArtifact = file ? `/uploads/documents/${file.filename}` : drive_link;
 
     try {
+      const batchContentExists = await prisma.batch_content.findUnique({ where: { id: contentId } });
+      const contentItemExists = await prisma.content_items.findUnique({ where: { id: contentId } });
+
+      if (!batchContentExists && !contentItemExists) {
+        return res.status(404).json({ detail: 'Content not found' });
+      }
+
       await prisma.submissions.create({
         data: {
           user_id: req.user.id,
-          batch_content_id: contentId,
-          drive_link: "local-upload-" + file.originalname,
+          batch_content_id: batchContentExists ? contentId : null,
+          content_item_id: !batchContentExists ? contentId : null,
+          drive_link: submissionArtifact,
           status: "submitted",
           submitted_at: new Date()
         }
       });
 
+      const whereClause = batchContentExists 
+        ? { user_id: req.user.id, batch_content_id: contentId }
+        : { user_id: req.user.id, content_item_id: contentId };
+
       // Also mark progress as complete
       const existing = await prisma.lesson_progress.findFirst({
-        where: { user_id: req.user.id, batch_content_id: contentId }
+        where: whereClause
       });
       if (existing) {
         await prisma.lesson_progress.update({
@@ -144,7 +170,8 @@ export const submitAssignment = async (req: AuthRequest, res: Response) => {
         await prisma.lesson_progress.create({
           data: {
             user_id: req.user.id,
-            batch_content_id: contentId,
+            batch_content_id: batchContentExists ? contentId : null,
+            content_item_id: !batchContentExists ? contentId : null,
             is_completed: true,
             completed_at: new Date(),
             violation_count: 0,
@@ -182,6 +209,67 @@ export const createContentItem = async (req: AuthRequest, res: Response) => {
     return res.json(newItem);
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const createDirectVideoContentItem = async (req: AuthRequest, res: Response) => {
+  const { title, duration, is_mandatory, instructions, module_id, start_time, end_time } = req.body;
+  
+  if (!req.file) {
+    return res.status(400).json({ detail: 'No video file provided' });
+  }
+
+  const videoPath = `/uploads/videos/${req.file.filename}`;
+
+  try {
+    const newItem = await prisma.content_items.create({
+      data: {
+        title: title || 'Direct Video',
+        type: 'direct_video',
+        content: videoPath,
+        duration: duration ? parseInt(duration) : null,
+        is_mandatory: is_mandatory === 'true',
+        instructions,
+        module_id: parseInt(module_id, 10),
+        start_time: start_time ? new Date(start_time) : null,
+        end_time: end_time ? new Date(end_time) : null,
+      }
+    });
+    return res.json(newItem);
+  } catch (error) {
+    console.error('Error saving direct video:', error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const createDirectDocumentContentItem = async (req: AuthRequest, res: Response) => {
+  const { title, type, is_mandatory, instructions, module_id, start_time, end_time } = req.body;
+  
+  if (!req.file) {
+    return res.status(400).json({ detail: 'No document file provided' });
+  }
+
+  const documentPath = `/uploads/documents/${req.file.filename}`;
+  // Type will generally be 'direct_document' or 'assignment_document'
+  const docType = type || 'direct_document';
+
+  try {
+    const newItem = await prisma.content_items.create({
+      data: {
+        title: title || 'Document',
+        type: docType,
+        content: documentPath,
+        is_mandatory: is_mandatory === 'true',
+        instructions,
+        module_id: parseInt(module_id, 10),
+        start_time: start_time ? new Date(start_time) : null,
+        end_time: end_time ? new Date(end_time) : null,
+      }
+    });
+    return res.json(newItem);
+  } catch (error) {
+    console.error('Error saving direct document:', error);
     return res.status(500).json({ detail: 'Internal server error' });
   }
 };

@@ -140,15 +140,21 @@ const AssignmentManager = () => {
 
                                   <div className="flex items-center gap-2">
                                     {/* 🔗 THE MAGIC LINK */}
-                                    <a
-                                      href={sub.drive_search_link}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="flex items-center gap-1 text-xs font-bold text-[#005EB8] hover:text-[#004a94] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors mr-2 text-decoration-none"
-                                      title="Open Assignment in Drive"
-                                    >
-                                      <ExternalLink size={14} /> View
-                                    </a>
+                                    {sub.drive_search_link?.startsWith('QUIZ_SCORE:') ? (
+                                      <span className="text-xs font-extrabold text-[#005EB8] bg-blue-50 px-2 py-1 rounded border border-blue-100 mr-2">
+                                        Score: {sub.drive_search_link.replace('QUIZ_SCORE:', '')}
+                                      </span>
+                                    ) : (
+                                      <a
+                                        href={sub.drive_search_link?.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api/v1', '')}${sub.drive_search_link}` : sub.drive_search_link}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-1 text-xs font-bold text-[#005EB8] hover:text-[#004a94] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors mr-2 text-decoration-none"
+                                        title="Open Assignment in Drive"
+                                      >
+                                        <ExternalLink size={14} /> View
+                                      </a>
+                                    )}
 
                                     {/* ✅ VERIFY BUTTON */}
                                     {sub.status === "Verified" ? (

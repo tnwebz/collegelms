@@ -34,10 +34,19 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+export const requireSuperAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  await authenticate(req, res, () => {
+    if (req.user?.role !== 'SUPERADMIN') {
+      return res.status(403).json({ detail: '⛔ Access Forbidden: Super Admin Only' });
+    }
+    next();
+  });
+};
+
 export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFunction) => {
   await authenticate(req, res, () => {
-    if (req.user?.role !== 'ADMIN') {
-      return res.status(403).json({ detail: '⛔ Access Forbidden: Admins Only' });
+    if (req.user?.role !== 'HOD') {
+      return res.status(403).json({ detail: '⛔ Access Forbidden: HOD Only' });
     }
     next();
   });
@@ -45,14 +54,14 @@ export const requireAdmin = async (req: AuthRequest, res: Response, next: NextFu
 
 export const requireStaff = async (req: AuthRequest, res: Response, next: NextFunction) => {
   await authenticate(req, res, () => {
-    if (req.user?.role !== 'STAFF' && req.user?.role !== 'ADMIN') {
+    if (req.user?.role !== 'STAFF' && req.user?.role !== 'HOD') {
       return res.status(403).json({ detail: '⛔ Access Forbidden: Staff Only' });
     }
     next();
   });
 };
 
-// Legacy alias — routes still referencing requireInstructor will now check for STAFF or ADMIN
+// Legacy alias — routes still referencing requireInstructor will now check for STAFF or HOD
 export const requireInstructor = requireStaff;
 
 export const requireStudent = async (req: AuthRequest, res: Response, next: NextFunction) => {

@@ -8,9 +8,10 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
+  HOD
   STAFF
   STUDENT
+  SUPERADMIN
 }
 
 enum BatchStatus {
@@ -38,6 +39,7 @@ model users {
 
   student_profile student_profiles?
   staff_profile   staff_profiles?
+  hod_profile     hod_profiles?
 
   challenge_progress challenge_progress[]
   code_tests         code_tests[]
@@ -59,6 +61,8 @@ model student_profiles {
   enrollment_year  Int?
   current_semester Int?
   branch           String? @db.VarChar
+  batch_year       String? @db.VarChar
+  section          String? @db.VarChar
   users            users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
@@ -68,6 +72,15 @@ model staff_profiles {
   age           Int?
   gender        String? @db.VarChar
   qualification String? @db.VarChar
+  users         users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model hod_profiles {
+  id            Int     @id @default(autoincrement())
+  user_id       Int     @unique
+  department    String? @db.VarChar
+  age           Int?
+  gender        String? @db.VarChar
   users         users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
@@ -145,9 +158,11 @@ model content_items {
   module_id    Int?
   instructions String?
   test_config  String?
-  start_time   DateTime? @db.Timestamp(6)
-  end_time     DateTime? @db.Timestamp(6)
-  modules      modules?  @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  start_time      DateTime?         @db.Timestamp(6)
+  end_time        DateTime?         @db.Timestamp(6)
+  modules         modules?          @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lesson_progress lesson_progress[]
+  submissions     submissions[]
 }
 
 model modules {
@@ -165,11 +180,13 @@ model lesson_progress {
   id               Int            @id @default(autoincrement())
   user_id          Int?
   batch_content_id Int?
+  content_item_id  Int?
   is_completed     Boolean?
   completed_at     DateTime?      @db.Timestamp(6)
   violation_count  Int?
   is_terminated    Boolean?
   batch_content    batch_content? @relation(fields: [batch_content_id], references: [id], onDelete: Cascade)
+  content_items    content_items? @relation(fields: [content_item_id], references: [id], onDelete: Cascade)
   users            users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([id], map: "ix_lesson_progress_id")
@@ -179,10 +196,12 @@ model submissions {
   id               Int            @id @default(autoincrement())
   user_id          Int?
   batch_content_id Int?
+  content_item_id  Int?
   drive_link       String?        @db.VarChar
   status           String?        @db.VarChar
   submitted_at     DateTime?      @db.Timestamp(6)
   batch_content    batch_content? @relation(fields: [batch_content_id], references: [id], onDelete: Cascade)
+  content_items    content_items? @relation(fields: [content_item_id], references: [id], onDelete: Cascade)
   users            users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([id], map: "ix_submissions_id")

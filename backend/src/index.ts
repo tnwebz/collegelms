@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { config } from './config';
 import { limiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth.routes';
@@ -17,6 +18,7 @@ import contentRoutes from './routes/content.routes';
 import liveRoutes from './routes/live.routes';
 import proctoringRoutes from './routes/proctoring.routes';
 import miscRoutes from './routes/misc.routes';
+import superadminRoutes from './routes/superadmin.routes';
 import { authenticate } from './middleware/auth';
 import { getBatchPlayer } from './controllers/course.controller';
 
@@ -26,6 +28,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(limiter);
+
+// ── Static Files ────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Generic Routes ──────────────────────────────────────────
 app.use('/api/v1', authRoutes);
@@ -38,6 +43,7 @@ app.use('/api/v1', miscRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/staff', staffRoutes);
 app.use('/api/v1/student', studentRoutes);
+app.use('/api/v1/superadmin', superadminRoutes);
 
 // ── Resource Routes ─────────────────────────────────────────
 app.use('/api/v1/ai', aiRoutes);

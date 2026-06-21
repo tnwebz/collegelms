@@ -134,16 +134,22 @@ const AssignmentVerification = () => {
                                   </div>
                                   
                                   <div className="flex items-center gap-2">
-                                    {/* 🔗 THE MAGIC LINK */}
-                                    <a 
-                                      href={sub.drive_search_link} 
-                                      target="_blank" 
-                                      rel="noreferrer"
-                                      className="p-2 text-slate-500 hover:text-[#005EB8] hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all"
-                                      title="Open Assignment in Drive"
-                                    >
-                                       <ExternalLink size={16} />
-                                    </a>
+                                    {/* 🔗 THE MAGIC LINK OR SCORE */}
+                                    {sub.drive_search_link?.startsWith('QUIZ_SCORE:') ? (
+                                      <span className="text-xs font-extrabold text-[#005EB8] bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                                        Score: {sub.drive_search_link.replace('QUIZ_SCORE:', '')}
+                                      </span>
+                                    ) : (
+                                      <a 
+                                        href={sub.drive_search_link?.startsWith('/uploads/') ? `${API_BASE_URL.replace('/api/v1', '')}${sub.drive_search_link}` : sub.drive_search_link} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        className="p-2 text-slate-500 hover:text-[#005EB8] hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all"
+                                        title={sub.drive_search_link?.startsWith('/uploads/') ? "Open Uploaded Assignment" : "Open Assignment in Drive"}
+                                      >
+                                         <ExternalLink size={16} />
+                                      </a>
+                                    )}
 
                                     {/* ✅ VERIFY BUTTON */}
                                     {sub.status === "Verified" ? (

@@ -68,3 +68,30 @@ export const addBatchContent = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ detail: 'Internal server error' });
   }
 };
+
+export const uploadBatchVideo = async (req: AuthRequest, res: Response) => {
+  const batch_id = parseInt(req.params.batch_id as string, 10);
+  const { title } = req.body;
+  
+  if (!req.file) {
+    return res.status(400).json({ detail: 'No video file provided' });
+  }
+
+  // Construct relative URL path
+  const videoPath = `/uploads/videos/${req.file.filename}`;
+
+  try {
+    const content = await prisma.batch_content.create({
+      data: {
+        batch_id,
+        type: ContentType.VIDEO,
+        title: title || 'Uploaded Video',
+        content_data: videoPath,
+      }
+    });
+    return res.status(201).json({ message: 'Video uploaded successfully', content });
+  } catch (error) {
+    console.error('Error saving video to database:', error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};

@@ -1,50 +1,72 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import API_BASE_URL from './config';
+import API_BASE_URL from "./config";
 import {
-  User, Lock, Mail, ArrowRight, CheckCircle,
-  ShieldCheck, Eye, EyeOff,
-  Smartphone, MessageSquare, AlertCircle, X
+  User,
+  Lock,
+  Mail,
+  ArrowRight,
+  CheckCircle,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Smartphone,
+  MessageSquare,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import BrandLogo from "./components/BrandLogo";
 
-// 🔥 FIREBASE IMPORTS
-import { initializeApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-auth.useDeviceLanguage();
+import {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
+import { auth } from "./firebase";
 
 // Google Icon Component
 const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+  <svg
+    viewBox="0 0 24 24"
+    width="20"
+    height="20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      fill="#4285F4"
+    />
+    <path
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      fill="#34A853"
+    />
+    <path
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      fill="#FBBC05"
+    />
+    <path
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      fill="#EA4335"
+    />
   </svg>
 );
 
-interface ToastState { show: boolean; message: string; type: "success" | "error"; }
+interface ToastState {
+  show: boolean;
+  message: string;
+  type: "success" | "error";
+}
 
 const Login = () => {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const role = "student";
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: "",
+    type: "success",
+  });
   const [showPassword, setShowPassword] = useState(false);
 
   // ✅ NEW STATES FOR OTP FLOW
@@ -54,7 +76,11 @@ const Login = () => {
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-  const [formData, setFormData] = useState({ email: "", password: "", name: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    name: "",
+  });
 
   const activeBg = isSignUp ? "bg-[#94A3B8]" : "bg-[#005EB8]";
   const activeText = isSignUp ? "text-[#94A3B8]" : "text-[#005EB8]";
@@ -62,8 +88,16 @@ const Login = () => {
   // ✅ API URL FROM ENV
   const API_URL = API_BASE_URL;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
-  const triggerToast = (message: string, type: "success" | "error" = "success") => { setToast({ show: true, message, type }); setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000); };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  const triggerToast = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 3000);
+  };
 
   // 🔥 1. ROBUST RECAPTCHA INIT (The Fix for "Ghost Captcha")
   useEffect(() => {
@@ -76,11 +110,16 @@ const Login = () => {
       }
 
       try {
-        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': () => console.log("Captcha Verified"),
-          'expired-callback': () => triggerToast("Captcha expired. Reload page.", "error")
-        });
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          "recaptcha-container",
+          {
+            size: "invisible",
+            callback: () => console.log("Captcha Verified"),
+            "expired-callback": () =>
+              triggerToast("Captcha expired. Reload page.", "error"),
+          },
+        );
       } catch (err) {
         console.error("Recaptcha Init Error:", err);
       }
@@ -89,7 +128,8 @@ const Login = () => {
 
   // 🔥 2. SEND OTP LOGIC
   const onSignInSubmit = async () => {
-    if (!phone || phone.length < 10) return triggerToast("Please enter a valid phone number", "error");
+    if (!phone || phone.length < 10)
+      return triggerToast("Please enter a valid phone number", "error");
 
     setLoading(true);
 
@@ -98,7 +138,11 @@ const Login = () => {
 
     try {
       const appVerifier = (window as any).recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        appVerifier,
+      );
 
       // Save result
       setConfirmationResult(confirmation);
@@ -107,7 +151,6 @@ const Login = () => {
       setLoading(false);
       setShowOtpInput(true);
       triggerToast("OTP Sent! (Use Test Number if dev)", "success");
-
     } catch (error: any) {
       console.error("SMS Error:", error);
       setLoading(false);
@@ -119,10 +162,13 @@ const Login = () => {
         // Re-init logic would go here or force a refresh
       }
 
-      if (error.code === 'auth/invalid-phone-number') {
+      if (error.code === "auth/invalid-phone-number") {
         triggerToast("Invalid Phone Number Format.", "error");
-      } else if (error.code === 'auth/too-many-requests') {
-        triggerToast("Spam Limit Reached. Use Test Number +91 1234567890", "error");
+      } else if (error.code === "auth/too-many-requests") {
+        triggerToast(
+          "Spam Limit Reached. Use Test Number +91 1234567890",
+          "error",
+        );
       } else {
         triggerToast("SMS Failed: " + error.message, "error");
       }
@@ -142,35 +188,37 @@ const Login = () => {
       return;
     }
 
-    confirmationResult.confirm(otp).then(async () => {
-      setIsPhoneVerified(true);
-      setLoading(false);
-      triggerToast("Phone Verified!", "success");
+    confirmationResult
+      .confirm(otp)
+      .then(async () => {
+        setIsPhoneVerified(true);
+        setLoading(false);
+        triggerToast("Phone Verified!", "success");
 
-      // 🔥 4. DETERMINE FLOW BASED ON MODE
-      if (!isSignUp) {
-        // LOGIN FLOW: Ask backend for a token using the verified phone number
-        try {
-          const res = await axios.post(`${API_URL}/login-otp`, {
-            phone_number: phone.startsWith("+") ? phone : "+91" + phone
-          });
-          localStorage.setItem("token", res.data.access_token);
-          localStorage.setItem("role", res.data.role);
-          triggerToast("Login Successful!", "success");
-          setTimeout(() => navigate("/student-dashboard"), 1000);
-        } catch (err: any) {
-          triggerToast("Login failed. Is this number registered?", "error");
+        // 🔥 4. DETERMINE FLOW BASED ON MODE
+        if (!isSignUp) {
+          // LOGIN FLOW: Ask backend for a token using the verified phone number
+          try {
+            const res = await axios.post(`${API_URL}/login-otp`, {
+              phone_number: phone.startsWith("+") ? phone : "+91" + phone,
+            });
+            localStorage.setItem("token", res.data.access_token);
+            localStorage.setItem("role", res.data.role);
+            triggerToast("Login Successful!", "success");
+            setTimeout(() => navigate("/student-dashboard"), 1000);
+          } catch (err: any) {
+            triggerToast("Login failed. Is this number registered?", "error");
+          }
+        } else {
+          // SIGNUP FLOW: Proceed to create the user in DB
+          await finalizeSignup();
         }
-      } else {
-        // SIGNUP FLOW: Proceed to create the user in DB
-        await finalizeSignup();
-      }
-
-    }).catch((error: any) => {
-      setLoading(false);
-      console.error("Verification Error:", error);
-      triggerToast("Invalid OTP. Please try again.", "error");
-    });
+      })
+      .catch((error: any) => {
+        setLoading(false);
+        console.error("Verification Error:", error);
+        triggerToast("Invalid OTP. Please try again.", "error");
+      });
   };
   // 🔥 5. FINAL ACCOUNT CREATION (Backend Call)
   const finalizeSignup = async () => {
@@ -180,7 +228,7 @@ const Login = () => {
         password: formData.password,
         name: formData.name,
         role: role,
-        phone_number: phone
+        phone_number: phone,
       });
       triggerToast("Account created successfully! Please Sign In.", "success");
 
@@ -191,7 +239,10 @@ const Login = () => {
       setOtp("");
       setPhone("");
     } catch (err: any) {
-      triggerToast(err.response?.data?.detail || "Registration Failed. Email may exist.", "error");
+      triggerToast(
+        err.response?.data?.detail || "Registration Failed. Email may exist.",
+        "error",
+      );
     }
   };
 
@@ -209,7 +260,10 @@ const Login = () => {
         const res = await axios.post(`${API_URL}/login`, loginParams);
 
         if (res.data.role !== "STUDENT") {
-          triggerToast("Please use the Admin Portal for Instructor access.", "error");
+          triggerToast(
+            "Please use the Admin Portal for Instructor access.",
+            "error",
+          );
           setLoading(false);
           return;
         }
@@ -237,49 +291,106 @@ const Login = () => {
       {/* 🟢 RECAPTCHA CONTAINER (Must exist for OTP) */}
       <div id="recaptcha-container"></div>
 
-      <button onClick={() => navigate("/admin-login")} className="absolute top-4 right-4 lg:top-6 lg:right-6 flex items-center gap-2 px-3 py-1.5 lg:px-4 lg:py-2 bg-white rounded-full shadow-md text-slate-600 hover:text-[#005EB8] hover:shadow-lg transition-all z-50 font-bold text-xs lg:text-sm border border-slate-200">
-        <ShieldCheck size={16} className="lg:w-[18px] lg:h-[18px]" /> Admin Access
+      <button
+        onClick={() => navigate("/admin-login")}
+        className="absolute top-4 right-4 lg:top-6 lg:right-6 flex items-center gap-2 px-3 py-1.5 lg:px-4 lg:py-2 bg-white rounded-full shadow-md text-slate-600 hover:text-[#005EB8] hover:shadow-lg transition-all z-50 font-bold text-xs lg:text-sm border border-slate-200"
+      >
+        <ShieldCheck size={16} className="lg:w-[18px] lg:h-[18px]" /> Admin
+        Access
       </button>
 
       <div className="relative bg-[#F8FAFC] rounded-[20px] shadow-2xl overflow-hidden w-full max-w-[500px] lg:max-w-[1000px] min-h-[550px] lg:min-h-[600px] flex border border-slate-200 flex-col lg:block">
-
         {/* ======================= */}
         {/* 🔑 SIGN IN FORM (LEFT)  */}
         {/* ======================= */}
         {/* Mobile: Show if NOT signUp. Desktop: Always present but hidden via opacity/transform logic */}
-        <div className={`
+        <div
+          className={`
              lg:absolute lg:top-0 lg:left-0 lg:w-1/2 lg:h-full lg:transition-all lg:duration-700 lg:ease-in-out lg:z-20
-             ${isSignUp ? 'hidden lg:flex lg:translate-x-full lg:opacity-0 lg:pointer-events-none' : 'flex w-full h-full lg:opacity-100'}
-        `}>
-          <form onSubmit={handleAuth} className="bg-[#F8FAFC] flex flex-col items-center justify-center w-full h-full px-8 py-10 lg:px-12 text-center">
-            <div className="mb-4"><BrandLogo size="xl" showTagline /></div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-1">Learner Login</h1>
-            <p className="text-slate-400 text-sm mb-6">Enter your details to access your courses</p>
+             ${isSignUp ? "hidden lg:flex lg:translate-x-full lg:opacity-0 lg:pointer-events-none" : "flex w-full h-full lg:opacity-100"}
+        `}
+        >
+          <form
+            onSubmit={handleAuth}
+            className="bg-[#F8FAFC] flex flex-col items-center justify-center w-full h-full px-8 py-10 lg:px-12 text-center"
+          >
+            <div className="mb-4">
+              <BrandLogo size="xl" showTagline />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-1">
+              Learner Login
+            </h1>
+            <p className="text-slate-400 text-sm mb-6">
+              Enter your details to access your courses
+            </p>
 
             <div className="flex gap-4 mb-6 w-full justify-center">
-              <button type="button" className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm"><GoogleIcon /></button>
+              <button
+                type="button"
+                className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm"
+              >
+                <GoogleIcon />
+              </button>
             </div>
 
             <div className="flex items-center w-full mb-6">
-              <div className="h-px bg-slate-200 flex-1"></div><span className="px-3 text-xs text-slate-400 font-medium">OR USE EMAIL</span><div className="h-px bg-slate-200 flex-1"></div>
+              <div className="h-px bg-slate-200 flex-1"></div>
+              <span className="px-3 text-xs text-slate-400 font-medium">
+                OR USE EMAIL
+              </span>
+              <div className="h-px bg-slate-200 flex-1"></div>
             </div>
 
             <div className="w-full max-w-[350px] space-y-4">
               <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#005EB8] focus-within:ring-opacity-50 transition-all shadow-sm">
-                <Mail className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                <input type="text" name="email" placeholder="Email or Login ID" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
+                <Mail
+                  className="text-slate-400 mr-3 shrink-0"
+                  size={20}
+                  strokeWidth={1.5}
+                />
+                <input
+                  type="text"
+                  name="email"
+                  placeholder="Email or Login ID"
+                  required
+                  className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400"
+                  onChange={handleInputChange}
+                />
               </div>
               <div className="flex items-center bg-white rounded-lg px-4 py-3 border border-slate-200 focus-within:ring-2 focus-within:ring-[#005EB8] focus-within:ring-opacity-50 transition-all shadow-sm">
-                <Lock className="text-slate-400 mr-3 shrink-0" size={20} strokeWidth={1.5} />
-                <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" required className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400" onChange={handleInputChange} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-slate-600 focus:outline-none ml-2 shrink-0">{showPassword ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+                <Lock
+                  className="text-slate-400 mr-3 shrink-0"
+                  size={20}
+                  strokeWidth={1.5}
+                />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  required
+                  className="bg-transparent outline-none flex-1 text-sm font-medium text-slate-700 placeholder-slate-400"
+                  onChange={handleInputChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-slate-400 hover:text-slate-600 focus:outline-none ml-2 shrink-0"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
-            <p className="mt-4 text-xs text-slate-400 font-medium cursor-pointer hover:underline self-end mr-2 lg:mr-8">Forgot Password?</p>
-            <button type="submit" disabled={loading} className={`mt-6 w-full max-w-[350px] py-3.5 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} hover:opacity-90`}>{loading ? "Signing In..." : "Sign In"} <ArrowRight size={18} /></button>
-
-
+            <p className="mt-4 text-xs text-slate-400 font-medium cursor-pointer hover:underline self-end mr-2 lg:mr-8">
+              Forgot Password?
+            </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`mt-6 w-full max-w-[350px] py-3.5 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 ${activeBg} hover:opacity-90`}
+            >
+              {loading ? "Signing In..." : "Sign In"} <ArrowRight size={18} />
+            </button>
           </form>
         </div>
 
@@ -289,14 +400,44 @@ const Login = () => {
         {/* HIDDEN ON MOBILE */}
         <div className="hidden lg:block absolute top-0 left-1/2 w-1/2 h-full overflow-hidden z-40 rounded-l-[20px] rounded-r-[100px]">
           <div className="h-full w-full bg-[#005EB8] text-white flex flex-col items-center justify-center px-12 text-center">
-            <h1 className="text-4xl font-extrabold mb-4 leading-tight">Learn Without <br />Limits.</h1>
-            <p className="text-sm font-medium mb-8 italic opacity-90 max-w-[320px]">“Education is the passport to the future, for tomorrow belongs to those who prepare for it today.”</p>
+            <h1 className="text-4xl font-extrabold mb-4 leading-tight">
+              Learn Without <br />
+              Limits.
+            </h1>
+            <p className="text-sm font-medium mb-8 italic opacity-90 max-w-[320px]">
+              “Education is the passport to the future, for tomorrow belongs to
+              those who prepare for it today.”
+            </p>
           </div>
         </div>
-
       </div>
 
-      {toast.show && (<div className="fixed top-5 right-5 z-50 bg-white px-6 py-4 rounded-xl shadow-2xl border-l-4 border-l-current flex items-center gap-3 animate-fade-in" style={{ borderColor: toast.type === "success" ? "#94A3B8" : "#ef4444" }}>{toast.type === "success" ? <CheckCircle className="text-[#94A3B8]" size={24} /> : <AlertCircle className="text-red-500" size={24} />}<div><h4 className="font-bold text-slate-800 text-sm">{toast.type === "success" ? "Success" : "Error"}</h4><p className="text-slate-500 text-xs">{toast.message}</p></div><button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-slate-400 hover:text-slate-600"><X size={16} /></button></div>)}
+      {toast.show && (
+        <div
+          className="fixed top-5 right-5 z-50 bg-white px-6 py-4 rounded-xl shadow-2xl border-l-4 border-l-current flex items-center gap-3 animate-fade-in"
+          style={{
+            borderColor: toast.type === "success" ? "#94A3B8" : "#ef4444",
+          }}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle className="text-[#94A3B8]" size={24} />
+          ) : (
+            <AlertCircle className="text-red-500" size={24} />
+          )}
+          <div>
+            <h4 className="font-bold text-slate-800 text-sm">
+              {toast.type === "success" ? "Success" : "Error"}
+            </h4>
+            <p className="text-slate-500 text-xs">{toast.message}</p>
+          </div>
+          <button
+            onClick={() => setToast({ ...toast, show: false })}
+            className="ml-2 text-slate-400 hover:text-slate-600"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

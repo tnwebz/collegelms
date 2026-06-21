@@ -9,9 +9,9 @@ import { AuthRequest } from '../middleware/auth';
 // GET /courses - list courses
 export const listCourses = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user.role === 'STAFF' || req.user.role === 'ADMIN') {
+    if (req.user.role === 'STAFF' || req.user.role === 'HOD') {
       const courses = await prisma.courses.findMany({
-        where: req.user.role === 'ADMIN' ? {} : { staff_id: req.user.id },
+        where: req.user.role === 'HOD' ? {} : { staff_id: req.user.id },
         include: { course_batches: true },
         orderBy: { id: 'desc' }
       });

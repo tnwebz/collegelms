@@ -24,10 +24,11 @@ import StaffStudentManagement from "./StaffStudentManagement";
 import BatchManagement from "./BatchManagement";
 import StaffManagement from "./StaffManagement";
 import AdminDashboardLayout from "./AdminDashboardLayout";
+import SuperAdminDashboard from "./SuperAdminDashboard";
 
 const StudentManagementWrapper = () => {
   const role = localStorage.getItem("role");
-  return role === "ADMIN" ? <StudentManagement /> : <StaffStudentManagement />;
+  return role === "HOD" ? <StudentManagement /> : <StaffStudentManagement />;
 };
 
 // --- Modified CourseList Component ---
@@ -164,7 +165,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: any, allowedRole
   if (!token) return <Navigate to="/login" replace />;
   
   if (!allowedRoles.includes(role || "")) {
-    if (role === "ADMIN") return <Navigate to="/admin-dashboard" />;
+    if (role === "SUPERADMIN") return <Navigate to="/superadmin-dashboard" />;
+    if (role === "HOD") return <Navigate to="/admin-dashboard" />;
     if (role === "STAFF") return <Navigate to="/dashboard" />;
     return <Navigate to="/student-dashboard" />;
   }
@@ -181,7 +183,7 @@ export default function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
 
         {/* STAFF ROUTES */}
-        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["STAFF", "ADMIN"]}><DashboardLayout /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["STAFF", "HOD"]}><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} /> 
           <Route path="courses" element={<CourseList />} />
           <Route path="batches" element={<BatchManagement />} />
@@ -197,12 +199,15 @@ export default function App() {
           <Route path="messages" element={<Messages />} />
         </Route>
 
-        {/* ADMIN ROUTES */}
-        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminDashboardLayout /></ProtectedRoute>}>
+        {/* HOD ROUTES (was ADMIN) */}
+        <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["HOD"]}><AdminDashboardLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} /> 
           <Route path="staff-management" element={<StaffManagement />} />
           <Route path="settings" element={<InstructorSettings />} />
         </Route>
+
+        {/* SUPER ADMIN ROUTES */}
+        <Route path="/superadmin-dashboard" element={<ProtectedRoute allowedRoles={["SUPERADMIN"]}><SuperAdminDashboard /></ProtectedRoute>} />
         
         <Route path="/student-dashboard" element={<ProtectedRoute allowedRoles={["STUDENT"]}><StudentDashboard /></ProtectedRoute>} />
         <Route path="/course/:courseId/player" element={<ProtectedRoute allowedRoles={["STUDENT"]}><CoursePlayer /></ProtectedRoute>} />

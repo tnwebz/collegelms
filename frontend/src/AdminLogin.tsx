@@ -40,15 +40,17 @@ const AdminLogin = () => {
 
       const res = await axios.post(`${API_BASE_URL}/login`, loginParams);
 
-      if (res.data.role !== "STAFF" && res.data.role !== "ADMIN") {
-        triggerToast("Access Denied. This portal is for Staff and Admins only.", "error");
+      if (res.data.role !== "STAFF" && res.data.role !== "HOD" && res.data.role !== "SUPERADMIN") {
+        triggerToast("Access Denied. This portal is for Staff, HOD, and Super Admin only.", "error");
         setLoading(false); return;
       }
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("role", res.data.role);
       triggerToast("Welcome back!", "success");
       setTimeout(() => {
-        if (res.data.role === "ADMIN") {
+        if (res.data.role === "SUPERADMIN") {
+          navigate("/superadmin-dashboard");
+        } else if (res.data.role === "HOD") {
           navigate("/admin-dashboard");
         } else {
           navigate("/dashboard");
@@ -73,8 +75,8 @@ const AdminLogin = () => {
         <div className="flex flex-col items-center text-center">
           <div className="mb-2 flex items-center justify-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm"><ShieldCheck size={32} className="text-[#005EB8]" /></div>
 
-          <h1 className="text-3xl font-extrabold text-slate-800 mt-4 mb-2">Staff & Admin Access</h1>
-          <p className="text-slate-500 text-sm mb-6 px-4">Secure login for faculty and administration.</p>
+          <h1 className="text-3xl font-extrabold text-slate-800 mt-4 mb-2">Staff & HOD Access</h1>
+          <p className="text-slate-500 text-sm mb-6 px-4">Secure login for faculty, HOD, and administration.</p>
 
           {/* SOCIAL LOGIN */}
           <div className="flex gap-4 mb-6 w-full justify-center">
