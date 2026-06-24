@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { authenticate, requireStaff } from '../middleware/auth';
 import { createBatch } from '../controllers/batch.controller';
 import {
-  getCourseDetails, listCourses, createCourse, updateCourseDetails, 
-  getCoursePlayer, getCourseChallenges, 
+  getCourseDetails, listCourses, createCourse, updateCourseDetails,
+  getCoursePlayer, getCourseChallenges,
   claimCertificate, generatePdf,
   getCourseModules, createCourseModule, publishCourse
 } from '../controllers/course.controller';

@@ -4,10 +4,13 @@ import axios from "axios";
 import {
   LogOut, Shield, Users, GraduationCap, Briefcase, UserPlus,
   ChevronDown, CheckCircle, AlertCircle, X, Download, Upload,
-  Search, Building2, Calendar, BookOpen, BarChart3, Settings
+  BookOpen, BarChart3
 } from "lucide-react";
 import API_BASE_URL from './config';
 import BrandLogo from "./components/BrandLogo";
+import { ManageStudents } from "./ManageStudents";
+import { ManageStaff } from "./ManageStaff";
+import { ManageHod } from "./ManageHod";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────
 const DEPARTMENTS = ["CSE", "IT", "AIDS", "AIML", "ECE", "EEE", "Mechatronics"];
@@ -73,12 +76,12 @@ const OnboardHod = ({ onSuccess }: { onSuccess: (msg: string) => void }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <InputField label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} placeholder="Dr. John Doe" required />
-          <InputField label="Age" value={form.age} onChange={(v) => setForm({ ...form, age: v })} placeholder="45" type="number" />
-          <SelectField label="Gender" value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} options={["Male", "Female", "Other"]} placeholder="Select gender" />
-          <SelectField label="Department" value={form.department} onChange={(v) => setForm({ ...form, department: v })} options={DEPARTMENTS} placeholder="Select department" required />
-          <InputField label="Login ID (Email)" value={form.login_id} onChange={(v) => setForm({ ...form, login_id: v })} placeholder="hod.cse@college.edu" required />
-          <InputField label="Password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="••••••••" type="password" required />
+          <InputField label="Full Name" value={form.full_name} onChange={(v: string) => setForm({ ...form, full_name: v })} placeholder="Dr. John Doe" required />
+          <InputField label="Age" value={form.age} onChange={(v: string) => setForm({ ...form, age: v })} placeholder="45" type="number" />
+          <SelectField label="Gender" value={form.gender} onChange={(v: string) => setForm({ ...form, gender: v })} options={["Male", "Female", "Other"]} placeholder="Select gender" />
+          <SelectField label="Department" value={form.department} onChange={(v: string) => setForm({ ...form, department: v })} options={DEPARTMENTS} placeholder="Select department" required />
+          <InputField label="Login ID (Email)" value={form.login_id} onChange={(v: string) => setForm({ ...form, login_id: v })} placeholder="hod.cse@college.edu" required />
+          <InputField label="Password" value={form.password} onChange={(v: string) => setForm({ ...form, password: v })} placeholder="••••••••" type="password" required />
 
           <div className="md:col-span-2 flex justify-end pt-2">
             <button type="submit" disabled={loading}
@@ -154,11 +157,11 @@ const OnboardStaff = ({ onSuccess }: { onSuccess: (msg: string) => void }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <InputField label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} placeholder="Jane Smith" required />
-          <InputField label="Age" value={form.age} onChange={(v) => setForm({ ...form, age: v })} placeholder="32" type="number" />
-          <SelectField label="Gender" value={form.gender} onChange={(v) => setForm({ ...form, gender: v })} options={["Male", "Female", "Other"]} placeholder="Select gender" />
-          <InputField label="Login ID (Email)" value={form.login_id} onChange={(v) => setForm({ ...form, login_id: v })} placeholder="staff@college.edu" required />
-          <InputField label="Password" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="••••••••" type="password" required />
+          <InputField label="Full Name" value={form.full_name} onChange={(v: string) => setForm({ ...form, full_name: v })} placeholder="Jane Smith" required />
+          <InputField label="Age" value={form.age} onChange={(v: string) => setForm({ ...form, age: v })} placeholder="32" type="number" />
+          <SelectField label="Gender" value={form.gender} onChange={(v: string) => setForm({ ...form, gender: v })} options={["Male", "Female", "Other"]} placeholder="Select gender" />
+          <InputField label="Login ID (Email)" value={form.login_id} onChange={(v: string) => setForm({ ...form, login_id: v })} placeholder="staff@college.edu" required />
+          <InputField label="Password" value={form.password} onChange={(v: string) => setForm({ ...form, password: v })} placeholder="••••••••" type="password" required />
           <div className="md:col-span-2 flex justify-end pt-2">
             <button type="submit" disabled={loading}
               className="px-8 py-3.5 bg-[#005EB8] hover:bg-[#004a94] text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200/50 transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2 border-none cursor-pointer">
@@ -323,9 +326,9 @@ const OnboardStudents = ({ onSuccess }: { onSuccess: (msg: string) => void }) =>
 
             {mode === "single" && (
               <form onSubmit={handleSingleSubmit} className="space-y-4 border-t border-slate-100 pt-5" onClick={(e) => e.stopPropagation()}>
-                <InputField label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} placeholder="Student Name" required />
-                <InputField label="Email (Login ID)" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="student@college.edu" required />
-                <InputField label="Password (Reg No)" value={form.password} onChange={(v) => setForm({ ...form, password: v })} placeholder="REG2024001" required />
+                <InputField label="Full Name" value={form.full_name} onChange={(v: string) => setForm({ ...form, full_name: v })} placeholder="Student Name" required />
+                <InputField label="Email (Login ID)" value={form.email} onChange={(v: string) => setForm({ ...form, email: v })} placeholder="student@college.edu" required />
+                <InputField label="Password (Reg No)" value={form.password} onChange={(v: string) => setForm({ ...form, password: v })} placeholder="REG2024001" required />
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 bg-[#005EB8] hover:bg-[#004a94] text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200/50 transition-all active:scale-95 disabled:opacity-60 border-none cursor-pointer">
                   {loading ? "Creating..." : "Create Account"}
@@ -460,7 +463,7 @@ const SelectField = ({ label, value, onChange, options, placeholder, required = 
 // ─── MAIN SUPER ADMIN DASHBOARD ─────────────────────────────────
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"hod" | "staff" | "students">("hod");
+  const [activeTab, setActiveTab] = useState<"hod" | "staff" | "students" | "manage-hod" | "manage-staff" | "manage-students">("manage-students");
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({ show: false, message: "", type: "success" });
   const [stats, setStats] = useState({ hods: 0, staff: 0, students: 0, courses: 0 });
 
@@ -484,9 +487,12 @@ const SuperAdminDashboard = () => {
   };
 
   const tabs = [
-    { key: "hod" as const, label: "Onboard HOD", icon: <Shield size={18} />, color: "text-amber-600" },
-    { key: "staff" as const, label: "Onboard Staff", icon: <Briefcase size={18} />, color: "text-blue-600" },
+    { key: "manage-students" as const, label: "Manage Students", icon: <Users size={18} />, color: "text-slate-600" },
+    { key: "manage-staff" as const, label: "Manage Staff", icon: <Briefcase size={18} />, color: "text-slate-600" },
+    { key: "manage-hod" as const, label: "Manage HOD", icon: <Shield size={18} />, color: "text-slate-600" },
     { key: "students" as const, label: "Onboard Students", icon: <GraduationCap size={18} />, color: "text-emerald-600" },
+    { key: "staff" as const, label: "Onboard Staff", icon: <UserPlus size={18} />, color: "text-blue-600" },
+    { key: "hod" as const, label: "Onboard HOD", icon: <Shield size={18} />, color: "text-amber-600" },
   ];
 
   const statCards = [
@@ -560,6 +566,9 @@ const SuperAdminDashboard = () => {
           </div>
 
           {/* ACTIVE TAB CONTENT */}
+          {activeTab === "manage-students" && <ManageStudents onSuccess={triggerToast} />}
+          {activeTab === "manage-staff" && <ManageStaff onSuccess={triggerToast} />}
+          {activeTab === "manage-hod" && <ManageHod onSuccess={triggerToast} />}
           {activeTab === "hod" && <OnboardHod onSuccess={triggerToast} />}
           {activeTab === "staff" && <OnboardStaff onSuccess={triggerToast} />}
           {activeTab === "students" && <OnboardStudents onSuccess={triggerToast} />}

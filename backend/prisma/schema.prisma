@@ -72,6 +72,7 @@ model staff_profiles {
   age           Int?
   gender        String? @db.VarChar
   qualification String? @db.VarChar
+  department    String? @db.VarChar
   users         users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
@@ -85,15 +86,19 @@ model hod_profiles {
 }
 
 model courses {
-  id           Int      @id @default(autoincrement())
-  title        String?  @db.VarChar
-  description  String?  @db.VarChar
-  price        Int?
-  image_url    String?  @db.VarChar
-  is_published Boolean?
-  staff_id     Int?
-  course_type  String?  @db.VarChar
-  language     String?  @db.VarChar
+  id             Int      @id @default(autoincrement())
+  title          String?  @db.VarChar
+  description    String?  @db.VarChar
+  image_url      String?  @db.VarChar
+  is_published   Boolean?
+  staff_id       Int?
+  course_type    String?  @db.VarChar
+  language       String?  @db.VarChar
+  department     String?  @db.VarChar
+  academic_year  String?  @db.VarChar
+  semester       Int?
+  sections       String[] @db.VarChar
+  academic_batch String?  @db.VarChar
 
   users             users?              @relation("CourseStaff", fields: [staff_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   course_batches    course_batches[]

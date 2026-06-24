@@ -6,10 +6,18 @@ import {
   getBatchProgress,
   admitToBatch,
   getStaffAssignments,
-  verifyAssignment
+  verifyAssignment,
+  getStudentsForEnrollment,
+  bulkEnrollStudents
 } from '../controllers/staff.controller';
 
 const router = Router();
+
+// GET /api/v1/staff/students - Get filterable list of students
+router.get('/students', requireStaff as any, getStudentsForEnrollment);
+
+// POST /api/v1/staff/courses/:course_id/enroll - Bulk enroll students
+router.post('/courses/:course_id/enroll', requireStaff as any, bulkEnrollStudents);
 
 // GET /api/v1/staff/dashboard — full course + batch overview
 router.get('/dashboard', requireStaff as any, getStaffDashboard);

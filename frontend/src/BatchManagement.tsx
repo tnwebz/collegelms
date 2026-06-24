@@ -38,7 +38,13 @@ const BatchManagement = () => {
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-
+  // Filter & Enroll State
+  const [filterDept, setFilterDept] = useState("");
+  const [filterSem, setFilterSem] = useState("");
+  const [filterSec, setFilterSec] = useState("");
+  const [filterStudents, setFilterStudents] = useState<any[]>([]);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const [filterSelectedIds, setFilterSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchDashboard();
@@ -120,6 +126,57 @@ const BatchManagement = () => {
     } finally {
       setBulkLoading(false);
     }
+  };
+
+  const handleFilterSearch = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const queryParams = new URLSearchParams();
+      if (filterDept) queryParams.append("department", filterDept);
+      if (filterSem) queryParams.append("semester", filterSem);
+      if (filterSec) queryParams.append("section", filterSec);
+
+      const res = await axios.get(`${API_BASE_URL}/staff/students?${queryParams.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFilterStudents(res.data);
+      setFilterSelectedIds([]);
+    } catch (err) {
+      alert("Failed to fetch students.");
+    }
+  };
+
+  const handleFilterEnroll = async () => {
+    if (!showAdmitModal || filterSelectedIds.length === 0) return alert("Select students to enroll.");
+    setFilterLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(`${API_BASE_URL}/admin/batches/${showAdmitModal}/enroll-existing`, 
+        { student_ids: filterSelectedIds },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert(res.data.message || "Students successfully enrolled!");
+      setFilterSelectedIds([]);
+      fetchDashboard();
+    } catch (err: any) {
+      alert("Enrollment failed");
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  const selectAllFilterStudents = () => {
+    if (filterSelectedIds.length === filterStudents.length) {
+      setFilterSelectedIds([]);
+    } else {
+      setFilterSelectedIds(filterStudents.map((s: any) => s.id));
+    }
+  };
+
+  const closeAdmitModal = () => {
+    setShowAdmitModal(null);
+    setFilterStudents([]);
+    setFilterSelectedIds([]);
   };
 
   const downloadTemplate = () => {
@@ -222,7 +279,7 @@ const BatchManagement = () => {
       {showAdmitModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto py-10">
           <div className="bg-[#f8fafc] w-full max-w-5xl p-6 md:p-10 rounded-2xl shadow-2xl relative my-auto mx-4">
-            <button onClick={() => setShowAdmitModal(null)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer">
+            <button onClick={closeAdmitModal} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer">
               <X size={24} />
             </button>
             
@@ -231,7 +288,7 @@ const BatchManagement = () => {
               <p className="text-slate-500 font-medium mt-1">Create accounts or upload a spreadsheet to automatically enroll them.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-6">
               {/* LEFT: SINGLE ADMIT */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div className="border-b border-slate-100 pb-5 mb-6">
@@ -289,6 +346,73 @@ const BatchManagement = () => {
                   </div>
                   <button disabled={bulkLoading} onClick={handleBulkAdmit} className="w-full py-3.5 bg-[#94A3B8] text-white rounded-xl font-bold text-sm hover:bg-[#76a928] transition-all shadow-md shadow-green-100 disabled:opacity-70 disabled:cursor-not-allowed">
                     {bulkLoading ? "Processing..." : "Process Batch Upload"}
+                  </button>
+                </div>
+              </div>
+
+              {/* RIGHT: FILTER ENROLL */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col h-full lg:col-span-1">
+                <div className="border-b border-slate-100 pb-5 mb-6">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-[#1e293b]">
+                    <Users size={20} className="text-[#005EB8]" /> Filter & Enroll
+                  </h3>
+                  <p className="text-slate-500 text-sm mt-1">Enroll existing students into this batch.</p>
+                </div>
+                
+                <div className="flex flex-col gap-4 flex-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Department</label>
+                    <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-300 text-sm focus:border-[#005EB8] outline-none">
+                      <option value="">All</option>
+                      <option value="Computer Science">Computer Science</option>
+                      <option value="Information Technology">Information Technology</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Semester</label>
+                      <select value={filterSem} onChange={(e) => setFilterSem(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-300 text-sm focus:border-[#005EB8] outline-none">
+                        <option value="">All</option>
+                        {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Section</label>
+                      <input type="text" placeholder="e.g. A" value={filterSec} onChange={(e) => setFilterSec(e.target.value)} className="w-full p-2.5 rounded-lg border border-slate-300 text-sm focus:border-[#005EB8] outline-none" />
+                    </div>
+                  </div>
+                  
+                  <button onClick={handleFilterSearch} className="w-full bg-slate-800 text-white p-2.5 rounded-lg font-bold border-none hover:bg-slate-900 transition-colors cursor-pointer">Find Students</button>
+
+                  <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden flex flex-col flex-1 max-h-[150px] bg-slate-50">
+                    <div className="flex justify-between items-center p-2 border-b border-slate-200 bg-white sticky top-0">
+                      <span className="text-xs font-bold text-slate-600 px-1">Found: {filterStudents.length}</span>
+                      {filterStudents.length > 0 && <button onClick={selectAllFilterStudents} className="text-[10px] font-bold text-[#005EB8] border-none bg-transparent cursor-pointer">{filterSelectedIds.length === filterStudents.length ? "Deselect All" : "Select All"}</button>}
+                    </div>
+                    <div className="overflow-y-auto p-2 flex flex-col gap-1">
+                      {filterStudents.length === 0 ? (
+                        <div className="text-center p-4 text-xs text-slate-400">Use filters above</div>
+                      ) : (
+                        filterStudents.map(student => (
+                          <div key={student.id} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                            <input type="checkbox" checked={filterSelectedIds.includes(student.id)} onChange={(e) => {
+                              if (e.target.checked) setFilterSelectedIds([...filterSelectedIds, student.id]);
+                              else setFilterSelectedIds(filterSelectedIds.filter(id => id !== student.id));
+                            }} className="w-3.5 h-3.5 rounded border-slate-300" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-700 truncate">{student.full_name}</p>
+                              <p className="text-[10px] text-slate-500 truncate">{student.student_profile?.branch} (Sem {student.student_profile?.current_semester} - {student.student_profile?.section})</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <button disabled={filterLoading || filterSelectedIds.length === 0} onClick={handleFilterEnroll} className="w-full mt-2 py-3.5 bg-[#005EB8] text-white rounded-xl font-bold text-sm hover:bg-[#004e9a] transition-all flex justify-center items-center shadow-md shadow-blue-100 disabled:opacity-70 disabled:cursor-not-allowed">
+                    {filterLoading ? "Enrolling..." : `Enroll ${filterSelectedIds.length} Students`}
                   </button>
                 </div>
               </div>

@@ -407,3 +407,93 @@ export const verifyAssignment = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ detail: 'Internal error' });
   }
 };
+
+// ============================================================
+// ACADEMIC ENROLLMENT (Staff/HOD bulk enrolls students)
+// ============================================================
+
+export const getStudentsForEnrollment = async (req: AuthRequest, res: Response) => {
+  const { department, academic_year, semester, section } = req.query;
+
+  try {
+    const students = await prisma.users.findMany({
+      where: {
+        role: 'STUDENT',
+        student_profile: {
+          ...(department && { branch: department as string }),
+          ...(semester && { current_semester: parseInt(semester as string, 10) }),
+          ...(section && { section: section as string })
+        }
+      },
+      include: {
+        student_profile: true
+      }
+    });
+
+    return res.json(students);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const bulkEnrollStudents = async (req: AuthRequest, res: Response) => {
+  const courseId = parseInt(req.params.course_id as string, 10);
+  const { student_ids } = req.body;
+
+  if (!Array.isArray(student_ids) || student_ids.length === 0) {
+    return res.status(400).json({ detail: 'No students provided' });
+  }
+
+  try {
+    // Check if the staff member owns the course
+    const course = await prisma.courses.findUnique({
+      where: { id: courseId },
+      include: { course_batches: true }
+    });
+
+    if (!course) return res.status(404).json({ detail: 'Course not found' });
+    if (course.staff_id !== req.user.id && req.user.role !== 'HOD') {
+      return res.status(403).json({ detail: 'Unauthorized to manage enrollments for this course' });
+    }
+
+    // Find or create an active batch for this course based on the course's academic metadata
+    let targetBatch = course.course_batches.find(b => b.status === 'ACTIVE');
+    
+    if (!targetBatch) {
+      targetBatch = await prisma.course_batches.create({
+        data: {
+          course_id: course.id,
+          semester: course.semester,
+          section: course.sections && course.sections.length > 0 ? course.sections[0] : null,
+          year: new Date().getFullYear(),
+          status: 'ACTIVE'
+        }
+      });
+    }
+
+    // Enroll students to this batch, avoiding duplicates
+    let enrolledCount = 0;
+    for (const studentId of student_ids) {
+      const existing = await prisma.enrollments.findFirst({
+        where: { student_id: studentId, batch_id: targetBatch.id }
+      });
+
+      if (!existing) {
+        await prisma.enrollments.create({
+          data: {
+            student_id: studentId,
+            batch_id: targetBatch.id,
+            enrollment_date: new Date()
+          }
+        });
+        enrolledCount++;
+      }
+    }
+
+    return res.json({ message: `Successfully enrolled ${enrolledCount} students into the course batch.`, batch_id: targetBatch.id });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};

@@ -47,15 +47,15 @@ const AdminLogin = () => {
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("role", res.data.role);
       triggerToast("Welcome back!", "success");
-      setTimeout(() => {
-        if (res.data.role === "SUPERADMIN") {
-          navigate("/superadmin-dashboard");
-        } else if (res.data.role === "HOD") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/dashboard");
-        }
-      }, 1000);
+        setTimeout(() => {
+          if (res.data.role === "SUPERADMIN") {
+            navigate("/superadmin-dashboard");
+          } else if (res.data.role === "HOD") {
+            navigate("/admin-dashboard");
+          } else {
+            navigate("/dashboard");
+          }
+        }, 1000);
     } catch (err: any) {
       triggerToast("Authentication failed. Check connection.", "error");
     } finally { setLoading(false); }

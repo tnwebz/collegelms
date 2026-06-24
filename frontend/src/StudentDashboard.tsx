@@ -113,50 +113,28 @@ const CourseCard = ({ course, type, navigate, handleFreeEnroll, openEnrollModal,
                 <h4 className="font-bold text-slate-800 mb-4 truncate" title={course.title}>{course.title}</h4>
 
                 <div className="flex justify-between items-center">
-                    {/* ✅ 2. DYNAMIC PRICE / STATUS DISPLAY */}
-                    {type === "enrolled" ? (
-                        <div className="flex items-center gap-2">
-                            {course.enrollment_type === "trial" ? (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onPayClick(course); }}
-                                    className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-200 transition-colors border border-green-200 animate-pulse"
-                                >
-                                    Pay ₹{course.price}
-                                </button>
-                            ) : (
-                                <span className="text-sm font-bold text-slate-400">Lifetime Access</span>
-                            )}
-                        </div>
-                    ) : (
-                        <span className={`text-lg font-extrabold ${course.price === 0 ? "text-[#94A3B8]" : "text-[#005EB8]"}`}>
-                            {course.price === 0 ? "Free" : `₹${course.price}`}
-                        </span>
-                    )}
+                    {/* ✅ STATUS DISPLAY */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[#005EB8]">Enrolled</span>
+                    </div>
 
-                    {/* ✅ 3. ACTION BUTTONS */}
-                    {type === "available" ? (
-                        <button onClick={() => course.price === 0 ? handleFreeEnroll(course.id) : openEnrollModal(course)} className={`px-4 py-2 rounded-lg text-white font-bold text-sm flex items-center gap-2 ${course.price === 0 ? "bg-[#94A3B8]" : "bg-[#005EB8]"}`}>
-                            {course.price === 0 ? <Sparkles size={14} /> : <Lock size={14} />} {course.price === 0 ? "Enroll" : "Unlock"}
+                    {/* ✅ ACTION BUTTONS */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDownloadSyllabus(course.description); }}
+                            className="bg-white border border-slate-300 text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+                            title="Download Syllabus"
+                        >
+                            <Download size={16} />
                         </button>
-                    ) : (
-                        <div className="flex gap-2">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDownloadSyllabus(course.description); }}
-                                className="bg-white border border-slate-300 text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-                                title="Download Syllabus"
-                            >
-                                <Download size={16} />
-                            </button>
 
-                            <button
-                                onClick={() => navigate(`/course/${course.id}/player`)}
-                                disabled={course.is_trial_expired} // 🚫 Disable if trial expired
-                                className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${course.is_trial_expired ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-800 text-white hover:bg-slate-900"}`}
-                            >
-                                <PlayCircle size={14} /> {course.is_trial_expired ? "Locked" : "Resume"}
-                            </button>
-                        </div>
-                    )}
+                        <button
+                            onClick={() => navigate(`/course/${course.id}/player`)}
+                            className="px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors bg-slate-800 text-white hover:bg-slate-900"
+                        >
+                            <PlayCircle size={14} /> Resume
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -273,21 +251,15 @@ const StudentDashboard = () => {
             if (!token) { navigate("/"); return; }
 
             const config = { headers: { Authorization: `Bearer ${token}` } };
+            const semester = localStorage.getItem("current_semester");
+            const query = semester ? `?semester=${semester}` : "";
 
-            const [allRes, myRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/courses`, config),
-                axios.get(`${API_BASE_URL}/my-courses`, config)
-            ]);
+            const myRes = await axios.get(`${API_BASE_URL}/my-courses${query}`, config);
 
-            // SAFETY CHECK: Ensure we have arrays
-            const allData = Array.isArray(allRes.data) ? allRes.data : [];
-            const myDataRaw = Array.isArray(myRes.data) ? myRes.data : [];
-            
             // Normalize backend payload (extracts .course if wrapped in batch struct)
+            const myDataRaw = Array.isArray(myRes.data) ? myRes.data : [];
             const myData = myDataRaw.map((c: any) => c.course ? c.course : c);
 
-            const myCourseIds = new Set(myData.map((c: any) => c.id));
-            setAvailableCourses(allData.filter((c: any) => !myCourseIds.has(c.id)));
             setEnrolledCourses(myData);
         } catch (err: any) {
             if (err.response?.status === 401) { localStorage.clear(); navigate("/"); }
@@ -1106,12 +1078,7 @@ const StudentDashboard = () => {
                     </div>
                 )}
 
-                {/* EXPLORE TAB */}
-                {activeTab === "explore" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {availableCourses.map(c => <CourseCard key={c.id} course={c} type="available" handleFreeEnroll={handleFreeEnroll} openEnrollModal={openEnrollModal} />)}
-                    </div>
-                )}
+
 
                 {/* TEST TAB */}
                 {activeTab === "test" && (

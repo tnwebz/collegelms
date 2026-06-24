@@ -80,6 +80,49 @@ export const bulkAdmitStudents = async (req: Request, res: Response) => {
   return res.status(501).json({ detail: 'Bulk admit not yet implemented' });
 };
 
+export const enrollExistingToBatch = async (req: Request, res: Response) => {
+  const batchId = parseInt(req.params.batch_id as string, 10);
+  const { student_ids } = req.body;
+
+  if (!Array.isArray(student_ids) || student_ids.length === 0) {
+    return res.status(400).json({ detail: 'No students provided' });
+  }
+
+  try {
+    const enrollmentsToCreate = [];
+    const alreadyEnrolled = [];
+
+    for (const studentId of student_ids) {
+      const check = await prisma.enrollments.findFirst({
+        where: { student_id: studentId, batch_id: batchId }
+      });
+      if (!check) {
+        enrollmentsToCreate.push({
+          student_id: studentId,
+          batch_id: batchId,
+          enrollment_date: new Date()
+        });
+      } else {
+        alreadyEnrolled.push(studentId);
+      }
+    }
+
+    if (enrollmentsToCreate.length > 0) {
+      await prisma.enrollments.createMany({
+        data: enrollmentsToCreate
+      });
+    }
+
+    return res.json({ 
+      message: `Successfully enrolled ${enrollmentsToCreate.length} students.`,
+      skipped: alreadyEnrolled.length 
+    });
+  } catch (error) {
+    console.error("Error in enrollExistingToBatch:", error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
 export const listStudents = async (req: Request, res: Response) => {
   try {
     const students = await prisma.users.findMany({

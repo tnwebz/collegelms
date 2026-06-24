@@ -205,7 +205,7 @@ const Login = () => {
             localStorage.setItem("token", res.data.access_token);
             localStorage.setItem("role", res.data.role);
             triggerToast("Login Successful!", "success");
-            setTimeout(() => navigate("/student-dashboard"), 1000);
+            setTimeout(() => navigate("/semester-selection"), 1000);
           } catch (err: any) {
             triggerToast("Login failed. Is this number registered?", "error");
           }
@@ -270,7 +270,7 @@ const Login = () => {
         localStorage.setItem("token", res.data.access_token);
         localStorage.setItem("role", res.data.role);
         triggerToast("Login Successful! Redirecting...", "success");
-        setTimeout(() => navigate("/student-dashboard"), 1000);
+        setTimeout(() => navigate("/semester-selection"), 1000);
       } catch (err: any) {
         triggerToast("Authentication failed. Check credentials.", "error");
         setLoading(false);

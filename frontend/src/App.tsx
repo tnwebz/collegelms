@@ -25,6 +25,7 @@ import BatchManagement from "./BatchManagement";
 import StaffManagement from "./StaffManagement";
 import AdminDashboardLayout from "./AdminDashboardLayout";
 import SuperAdminDashboard from "./SuperAdminDashboard";
+import SemesterSelection from "./SemesterSelection";
 
 const StudentManagementWrapper = () => {
   const role = localStorage.getItem("role");
@@ -160,11 +161,12 @@ const CourseList = () => {
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: any, allowedRoles: string[] }) => {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const rawRole = localStorage.getItem("role");
+  const role = rawRole ? rawRole.toUpperCase() : "";
   
   if (!token) return <Navigate to="/login" replace />;
   
-  if (!allowedRoles.includes(role || "")) {
+  if (!allowedRoles.includes(role)) {
     if (role === "SUPERADMIN") return <Navigate to="/superadmin-dashboard" />;
     if (role === "HOD") return <Navigate to="/admin-dashboard" />;
     if (role === "STAFF") return <Navigate to="/dashboard" />;
@@ -181,6 +183,9 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin-login" element={<AdminLogin />} />
+
+        {/* SEMESTER SELECTION */}
+        <Route path="/semester-selection" element={<ProtectedRoute allowedRoles={["STUDENT"]}><SemesterSelection /></ProtectedRoute>} />
 
         {/* STAFF ROUTES */}
         <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["STAFF", "HOD"]}><DashboardLayout /></ProtectedRoute>}>
