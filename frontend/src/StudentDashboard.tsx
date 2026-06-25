@@ -19,6 +19,7 @@ import * as blazeface from "@tensorflow-models/blazeface";
 import "@tensorflow/tfjs-backend-webgl";
 import BrandLogo from "./components/BrandLogo";
 import { CODE_TEMPLATES } from './utils/codeTemplates';
+import AccountSettings from "./AccountSettings";
 
 // --- TYPES ---
 interface Course {
@@ -161,7 +162,7 @@ const StudentDashboard = () => {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [studentProfile, setStudentProfile] = useState({ name: "Loading...", email: "..." });
+    const [studentProfile, setStudentProfile] = useState({ name: "Loading...", email: "...", profile_picture: "" });
     const [newPassword, setNewPassword] = useState("");
     // ✅ MOVED: Mobile Menu State (Must be before conditional returns)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -223,10 +224,16 @@ const StudentDashboard = () => {
             const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
             setStudentProfile({
                 name: res.data.full_name,
-                email: res.data.email
+                email: res.data.email,
+                profile_picture: res.data.profile_picture
             });
         } catch (e) { console.error("Profile fetch error", e); }
     };
+
+    useEffect(() => {
+        window.addEventListener('profileUpdated', fetchProfile);
+        return () => window.removeEventListener('profileUpdated', fetchProfile);
+    }, []);
 
     const fetchNotifications = async () => {
         try {
@@ -856,6 +863,7 @@ const StudentDashboard = () => {
                         { key: "test", label: "Code Test", icon: <Code size={20} /> },
                         { key: "explore", label: "Explore", icon: <Compass size={20} /> },
                         { key: "certificates", label: "Certificates", icon: <Award size={20} /> },
+                        { key: "settings", label: "Settings", icon: <Settings size={20} /> },
                     ].map((item) => {
                         const isActive = activeTab === item.key;
                         return (
@@ -929,9 +937,13 @@ const StudentDashboard = () => {
                         <div className="relative">
                             <button
                                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                                className="w-10 h-10 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold text-base shadow-lg shadow-blue-200/50 hover:scale-105 transition-transform"
+                                className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-[#005EB8] text-white flex items-center justify-center font-bold text-sm shadow-sm hover:ring-2 ring-[#005EB8]/30 transition-all border-none cursor-pointer"
                             >
-                                <User size={18} />
+                                {studentProfile.profile_picture ? (
+                                    <img src={studentProfile.profile_picture.startsWith('http') ? studentProfile.profile_picture : `${API_BASE_URL.replace('/api/v1', '')}${studentProfile.profile_picture}`} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    studentProfile.name.charAt(0)
+                                )}
                             </button>
 
                             {showProfileMenu && (
@@ -1128,12 +1140,8 @@ const StudentDashboard = () => {
 
                 {/* SETTINGS TAB */}
                 {activeTab === "settings" && (
-                    <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Lock size={20} className="text-slate-400" /> Change Password</h3>
-                        <div className="space-y-4">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#005EB8]" /></div>
-                            <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#005EB8] hover:bg-blue-700 text-white rounded-xl font-bold transition-all">Update Password</button>
-                        </div>
+                    <div className="-mx-4 md:mx-0">
+                        <AccountSettings />
                     </div>
                 )}
 

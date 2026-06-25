@@ -8,7 +8,10 @@ import {
   getStaffAssignments,
   verifyAssignment,
   getStudentsForEnrollment,
-  bulkEnrollStudents
+  bulkEnrollStudents,
+  deleteBatch,
+  removeStudentFromBatch,
+  getBatchReport
 } from '../controllers/staff.controller';
 
 const router = Router();
@@ -28,8 +31,17 @@ router.get('/batches/:batch_id/students', requireStaff as any, getBatchStudents)
 // GET /api/v1/staff/batches/:batch_id/progress — completion analytics per student
 router.get('/batches/:batch_id/progress', requireStaff as any, getBatchProgress);
 
+// GET /api/v1/staff/batches/:batch_id/report — detailed performance report
+router.get('/batches/:batch_id/report', requireStaff as any, getBatchReport);
+
 // POST /api/v1/staff/admit-to-batch
 router.post('/admit-to-batch', requireStaff as any, admitToBatch);
+
+// DELETE /api/v1/staff/batches/:batch_id — delete entire batch
+router.delete('/batches/:batch_id', requireStaff as any, deleteBatch);
+
+// DELETE /api/v1/staff/batches/:batch_id/students/:student_id — remove student from batch
+router.delete('/batches/:batch_id/students/:student_id', requireStaff as any, removeStudentFromBatch);
 
 // GET /api/v1/staff/assignments
 router.get('/assignments', requireStaff as any, getStaffAssignments);
@@ -38,3 +50,4 @@ router.get('/assignments', requireStaff as any, getStaffAssignments);
 router.post('/verify-assignment/:submissionId', requireStaff as any, verifyAssignment);
 
 export default router;
+

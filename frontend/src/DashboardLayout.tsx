@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, BookOpen, UserPlus, PlusCircle, LogOut, Bell,
   ChevronRight, Code, Menu, Settings, Users, FolderOpen, MessageSquare, Layers
 } from "lucide-react";
 import BrandLogo from "./components/BrandLogo";
+import axios from "axios";
+import API_BASE_URL from "./config";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -14,7 +16,28 @@ const DashboardLayout = () => {
 
   // ✅ Profile Dropdown State
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const instructorData = { name: "Instructor", email: "admin@gmail.com" };
+  const [userData, setUserData] = useState({ name: "Loading...", email: "...", profile_picture: "" });
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      setUserData({
+        name: res.data.full_name || "User",
+        email: res.data.email || "",
+        profile_picture: res.data.profile_picture || ""
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    window.addEventListener("profileUpdated", fetchProfile);
+    return () => window.removeEventListener("profileUpdated", fetchProfile);
+  }, []);
 
   const menuItems = [
     { label: "Home", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
@@ -139,23 +162,29 @@ const DashboardLayout = () => {
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-10 h-10 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold text-base shadow-lg shadow-blue-200/50 hover:scale-105 transition-transform"
+                className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-[#005EB8] text-white flex items-center justify-center font-bold text-sm shadow-sm hover:ring-2 ring-[#005EB8]/30 transition-all border-none cursor-pointer"
               >
-                IN
+                {userData.profile_picture ? (
+                    <img src={userData.profile_picture.startsWith('http') ? userData.profile_picture : `${API_BASE_URL.replace('/api/v1', '')}${userData.profile_picture}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    userData.name.charAt(0).toUpperCase()
+                )}
               </button>
 
               {showProfileMenu && (
                 <div className="absolute right-0 top-14 w-64 bg-slate-50 rounded-xl shadow-2xl p-4 z-[100] border border-slate-200 animate-fade-in-up">
                   <div className="mb-4 border-b border-slate-200 pb-4">
-                    <p className="font-bold text-[#1e293b]">{instructorData.name}</p>
-                    <p className="text-xs text-slate-500 mt-1">{instructorData.email}</p>
+                    <p className="font-bold text-[#1e293b] truncate" title={userData.name}>{userData.name}</p>
+                    <p className="text-sm text-slate-500 truncate" title={userData.email}>{userData.email}</p>
                   </div>
-                  <button onClick={() => { navigate("/dashboard/settings"); setShowProfileMenu(false); }} className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-slate-100 text-[#1e293b] text-sm font-medium transition-colors text-left">
-                    <Settings size={18} /> Settings
-                  </button>
+                  <div className="space-y-1">
+                    <button onClick={() => { navigate("/dashboard/settings"); setShowProfileMenu(false); }} className="w-full flex items-center gap-3 p-2.5 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors font-semibold border-none cursor-pointer bg-transparent">
+                      <Settings size={18} /> Account Settings
+                    </button>
                   <button onClick={handleLogout} className="flex items-center gap-3 w-full p-2.5 rounded-lg hover:bg-red-50 text-red-500 text-sm font-bold transition-colors text-left mt-1">
                     <LogOut size={18} /> Logout
                   </button>
+                  </div>
                 </div>
               )}
             </div>

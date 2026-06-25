@@ -4,13 +4,14 @@ import axios from "axios";
 import {
   LogOut, Shield, Users, GraduationCap, Briefcase, UserPlus,
   ChevronDown, CheckCircle, AlertCircle, X, Download, Upload,
-  BookOpen, BarChart3
+  BookOpen, BarChart3, Settings
 } from "lucide-react";
 import API_BASE_URL from './config';
 import BrandLogo from "./components/BrandLogo";
 import { ManageStudents } from "./ManageStudents";
 import { ManageStaff } from "./ManageStaff";
 import { ManageHod } from "./ManageHod";
+import AccountSettings from "./AccountSettings";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────
 const DEPARTMENTS = ["CSE", "IT", "AIDS", "AIML", "ECE", "EEE", "Mechatronics"];
@@ -463,11 +464,32 @@ const SelectField = ({ label, value, onChange, options, placeholder, required = 
 // ─── MAIN SUPER ADMIN DASHBOARD ─────────────────────────────────
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"hod" | "staff" | "students" | "manage-hod" | "manage-staff" | "manage-students">("manage-students");
+  const [activeTab, setActiveTab] = useState<"hod" | "staff" | "students" | "manage-hod" | "manage-staff" | "manage-students" | "settings">("manage-students");
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" }>({ show: false, message: "", type: "success" });
   const [stats, setStats] = useState({ hods: 0, staff: 0, students: 0, courses: 0 });
+  const [userData, setUserData] = useState({ name: "Loading...", email: "...", profile_picture: "" });
 
-  useEffect(() => { fetchStats(); }, []);
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      setUserData({
+        name: res.data.full_name || "Super Admin",
+        email: res.data.email || "",
+        profile_picture: res.data.profile_picture || ""
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchProfile();
+    window.addEventListener("profileUpdated", fetchProfile);
+    return () => window.removeEventListener("profileUpdated", fetchProfile);
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -493,6 +515,7 @@ const SuperAdminDashboard = () => {
     { key: "students" as const, label: "Onboard Students", icon: <GraduationCap size={18} />, color: "text-emerald-600" },
     { key: "staff" as const, label: "Onboard Staff", icon: <UserPlus size={18} />, color: "text-blue-600" },
     { key: "hod" as const, label: "Onboard HOD", icon: <Shield size={18} />, color: "text-amber-600" },
+    { key: "settings" as const, label: "Account Settings", icon: <Settings size={18} />, color: "text-slate-500" },
   ];
 
   const statCards = [
@@ -544,8 +567,14 @@ const SuperAdminDashboard = () => {
         <header className="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
           <h2 className="text-lg font-extrabold text-slate-800 m-0">Super Admin Control Panel</h2>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 font-medium">superadmin@gmail.com</span>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-lg">SA</div>
+            <span className="text-xs text-slate-400 font-medium truncate" title={userData.email}>{userData.email}</span>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 text-white flex items-center justify-center font-extrabold text-sm shadow-lg border border-slate-200 overflow-hidden">
+                {userData.profile_picture ? (
+                    <img src={userData.profile_picture.startsWith('http') ? userData.profile_picture : `${API_BASE_URL.replace('/api/v1', '')}${userData.profile_picture}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    userData.name.charAt(0).toUpperCase()
+                )}
+            </div>
           </div>
         </header>
 
@@ -572,6 +601,7 @@ const SuperAdminDashboard = () => {
           {activeTab === "hod" && <OnboardHod onSuccess={triggerToast} />}
           {activeTab === "staff" && <OnboardStaff onSuccess={triggerToast} />}
           {activeTab === "students" && <OnboardStudents onSuccess={triggerToast} />}
+          {activeTab === "settings" && <div className="-mx-4 md:-mx-8"><AccountSettings /></div>}
         </div>
       </main>
 
