@@ -13,6 +13,11 @@ if (!fs.existsSync(uploadDocDir)) {
   fs.mkdirSync(uploadDocDir, { recursive: true });
 }
 
+const uploadProfileDir = path.join(__dirname, '../../uploads/profiles');
+if (!fs.existsSync(uploadProfileDir)) {
+  fs.mkdirSync(uploadProfileDir, { recursive: true });
+}
+
 // Configure multer storage for videos
 const videoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -29,6 +34,18 @@ const videoStorage = multer.diskStorage({
 const docStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDocDir);
+  },
+  filename: (req, file, cb) => {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + '-' + safeName);
+  }
+});
+
+// Configure multer storage for profile pictures
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadProfileDir);
   },
   filename: (req, file, cb) => {
     const safeName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -68,3 +85,9 @@ export const uploadDocument = multer({
   fileFilter: documentFilter,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 }).single('document');
+
+export const uploadProfilePicture = multer({
+  storage: profileStorage,
+  fileFilter: documentFilter, // Reusing document filter which allows images
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+}).single('profile_picture');

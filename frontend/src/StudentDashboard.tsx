@@ -19,6 +19,7 @@ import * as blazeface from "@tensorflow-models/blazeface";
 import "@tensorflow/tfjs-backend-webgl";
 import BrandLogo from "./components/BrandLogo";
 import { CODE_TEMPLATES } from './utils/codeTemplates';
+import AccountSettings from "./AccountSettings";
 
 // --- TYPES ---
 interface Course {
@@ -113,50 +114,28 @@ const CourseCard = ({ course, type, navigate, handleFreeEnroll, openEnrollModal,
                 <h4 className="font-bold text-slate-800 mb-4 truncate" title={course.title}>{course.title}</h4>
 
                 <div className="flex justify-between items-center">
-                    {/* ✅ 2. DYNAMIC PRICE / STATUS DISPLAY */}
-                    {type === "enrolled" ? (
-                        <div className="flex items-center gap-2">
-                            {course.enrollment_type === "trial" ? (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onPayClick(course); }}
-                                    className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-200 transition-colors border border-green-200 animate-pulse"
-                                >
-                                    Pay ₹{course.price}
-                                </button>
-                            ) : (
-                                <span className="text-sm font-bold text-slate-400">Lifetime Access</span>
-                            )}
-                        </div>
-                    ) : (
-                        <span className={`text-lg font-extrabold ${course.price === 0 ? "text-[#94A3B8]" : "text-[#005EB8]"}`}>
-                            {course.price === 0 ? "Free" : `₹${course.price}`}
-                        </span>
-                    )}
+                    {/* ✅ STATUS DISPLAY */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-[#005EB8]">Enrolled</span>
+                    </div>
 
-                    {/* ✅ 3. ACTION BUTTONS */}
-                    {type === "available" ? (
-                        <button onClick={() => course.price === 0 ? handleFreeEnroll(course.id) : openEnrollModal(course)} className={`px-4 py-2 rounded-lg text-white font-bold text-sm flex items-center gap-2 ${course.price === 0 ? "bg-[#94A3B8]" : "bg-[#005EB8]"}`}>
-                            {course.price === 0 ? <Sparkles size={14} /> : <Lock size={14} />} {course.price === 0 ? "Enroll" : "Unlock"}
+                    {/* ✅ ACTION BUTTONS */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleDownloadSyllabus(course.description); }}
+                            className="bg-white border border-slate-300 text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors"
+                            title="Download Syllabus"
+                        >
+                            <Download size={16} />
                         </button>
-                    ) : (
-                        <div className="flex gap-2">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDownloadSyllabus(course.description); }}
-                                className="bg-white border border-slate-300 text-slate-600 p-2 rounded-lg hover:bg-slate-50 transition-colors"
-                                title="Download Syllabus"
-                            >
-                                <Download size={16} />
-                            </button>
 
-                            <button
-                                onClick={() => navigate(`/course/${course.id}/player`)}
-                                disabled={course.is_trial_expired} // 🚫 Disable if trial expired
-                                className={`px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors ${course.is_trial_expired ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-800 text-white hover:bg-slate-900"}`}
-                            >
-                                <PlayCircle size={14} /> {course.is_trial_expired ? "Locked" : "Resume"}
-                            </button>
-                        </div>
-                    )}
+                        <button
+                            onClick={() => navigate(`/course/${course.id}/player`)}
+                            className="px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors bg-slate-800 text-white hover:bg-slate-900"
+                        >
+                            <PlayCircle size={14} /> Resume
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -183,7 +162,7 @@ const StudentDashboard = () => {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [studentProfile, setStudentProfile] = useState({ name: "Loading...", email: "..." });
+    const [studentProfile, setStudentProfile] = useState({ name: "Loading...", email: "...", profile_picture: "" });
     const [newPassword, setNewPassword] = useState("");
     // ✅ MOVED: Mobile Menu State (Must be before conditional returns)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -245,10 +224,16 @@ const StudentDashboard = () => {
             const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
             setStudentProfile({
                 name: res.data.full_name,
-                email: res.data.email
+                email: res.data.email,
+                profile_picture: res.data.profile_picture
             });
         } catch (e) { console.error("Profile fetch error", e); }
     };
+
+    useEffect(() => {
+        window.addEventListener('profileUpdated', fetchProfile);
+        return () => window.removeEventListener('profileUpdated', fetchProfile);
+    }, []);
 
     const fetchNotifications = async () => {
         try {
@@ -273,21 +258,15 @@ const StudentDashboard = () => {
             if (!token) { navigate("/"); return; }
 
             const config = { headers: { Authorization: `Bearer ${token}` } };
+            const semester = localStorage.getItem("current_semester");
+            const query = semester ? `?semester=${semester}` : "";
 
-            const [allRes, myRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/courses`, config),
-                axios.get(`${API_BASE_URL}/my-courses`, config)
-            ]);
+            const myRes = await axios.get(`${API_BASE_URL}/my-courses${query}`, config);
 
-            // SAFETY CHECK: Ensure we have arrays
-            const allData = Array.isArray(allRes.data) ? allRes.data : [];
-            const myDataRaw = Array.isArray(myRes.data) ? myRes.data : [];
-            
             // Normalize backend payload (extracts .course if wrapped in batch struct)
+            const myDataRaw = Array.isArray(myRes.data) ? myRes.data : [];
             const myData = myDataRaw.map((c: any) => c.course ? c.course : c);
 
-            const myCourseIds = new Set(myData.map((c: any) => c.id));
-            setAvailableCourses(allData.filter((c: any) => !myCourseIds.has(c.id)));
             setEnrolledCourses(myData);
         } catch (err: any) {
             if (err.response?.status === 401) { localStorage.clear(); navigate("/"); }
@@ -884,6 +863,7 @@ const StudentDashboard = () => {
                         { key: "test", label: "Code Test", icon: <Code size={20} /> },
                         { key: "explore", label: "Explore", icon: <Compass size={20} /> },
                         { key: "certificates", label: "Certificates", icon: <Award size={20} /> },
+                        { key: "settings", label: "Settings", icon: <Settings size={20} /> },
                     ].map((item) => {
                         const isActive = activeTab === item.key;
                         return (
@@ -957,9 +937,13 @@ const StudentDashboard = () => {
                         <div className="relative">
                             <button
                                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                                className="w-10 h-10 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold text-base shadow-lg shadow-blue-200/50 hover:scale-105 transition-transform"
+                                className="w-10 h-10 rounded-full border-2 border-slate-200 overflow-hidden bg-[#005EB8] text-white flex items-center justify-center font-bold text-sm shadow-sm hover:ring-2 ring-[#005EB8]/30 transition-all border-none cursor-pointer"
                             >
-                                <User size={18} />
+                                {studentProfile.profile_picture ? (
+                                    <img src={studentProfile.profile_picture.startsWith('http') ? studentProfile.profile_picture : `${API_BASE_URL.replace('/api/v1', '')}${studentProfile.profile_picture}`} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    studentProfile.name.charAt(0)
+                                )}
                             </button>
 
                             {showProfileMenu && (
@@ -1106,12 +1090,7 @@ const StudentDashboard = () => {
                     </div>
                 )}
 
-                {/* EXPLORE TAB */}
-                {activeTab === "explore" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {availableCourses.map(c => <CourseCard key={c.id} course={c} type="available" handleFreeEnroll={handleFreeEnroll} openEnrollModal={openEnrollModal} />)}
-                    </div>
-                )}
+
 
                 {/* TEST TAB */}
                 {activeTab === "test" && (
@@ -1161,12 +1140,8 @@ const StudentDashboard = () => {
 
                 {/* SETTINGS TAB */}
                 {activeTab === "settings" && (
-                    <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Lock size={20} className="text-slate-400" /> Change Password</h3>
-                        <div className="space-y-4">
-                            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#005EB8]" /></div>
-                            <button onClick={handleUpdatePassword} className="w-full py-3 bg-[#005EB8] hover:bg-blue-700 text-white rounded-xl font-bold transition-all">Update Password</button>
-                        </div>
+                    <div className="-mx-4 md:mx-0">
+                        <AccountSettings />
                     </div>
                 )}
 

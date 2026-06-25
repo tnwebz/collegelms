@@ -16,15 +16,18 @@ import AddAdmits from "./AddAdmits";
 import CoursePreview from "./CoursePreview";
 import CodeArena from "./CodeArena"; 
 import Dashboard from "./Dashboard"; 
-import InstructorSettings from "./InstructorSettings";
+
 import StudentManagement from "./StudentManagement";
 import Messages from "./Messages";
 import CodingCourseManager from "./CodingCourseManager";
 import StaffStudentManagement from "./StaffStudentManagement";
 import BatchManagement from "./BatchManagement";
+import BatchDetail from "./BatchDetail";
 import StaffManagement from "./StaffManagement";
 import AdminDashboardLayout from "./AdminDashboardLayout";
 import SuperAdminDashboard from "./SuperAdminDashboard";
+import AccountSettings from "./AccountSettings";
+import SemesterSelection from "./SemesterSelection";
 
 const StudentManagementWrapper = () => {
   const role = localStorage.getItem("role");
@@ -160,11 +163,12 @@ const CourseList = () => {
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: any, allowedRoles: string[] }) => {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+  const rawRole = localStorage.getItem("role");
+  const role = rawRole ? rawRole.toUpperCase() : "";
   
   if (!token) return <Navigate to="/login" replace />;
   
-  if (!allowedRoles.includes(role || "")) {
+  if (!allowedRoles.includes(role)) {
     if (role === "SUPERADMIN") return <Navigate to="/superadmin-dashboard" />;
     if (role === "HOD") return <Navigate to="/admin-dashboard" />;
     if (role === "STAFF") return <Navigate to="/dashboard" />;
@@ -182,11 +186,15 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin-login" element={<AdminLogin />} />
 
+        {/* SEMESTER SELECTION */}
+        <Route path="/semester-selection" element={<ProtectedRoute allowedRoles={["STUDENT"]}><SemesterSelection /></ProtectedRoute>} />
+
         {/* STAFF ROUTES */}
         <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["STAFF", "HOD"]}><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} /> 
           <Route path="courses" element={<CourseList />} />
           <Route path="batches" element={<BatchManagement />} />
+          <Route path="batch/:batchId" element={<BatchDetail />} />
           <Route path="create-course" element={<CreateCourse />} />
           <Route path="course/:courseId/builder" element={<CourseBuilder />} />
           <Route path="assignments" element={<AssignmentManager />} />
@@ -195,15 +203,15 @@ export default function App() {
           <Route path="course/:courseId/CoursePreview" element={<CoursePreview />} />
           <Route path="code-arena" element={<CodeArena />} />
           <Route path="students" element={<StudentManagementWrapper />} />
-          <Route path="settings" element={<InstructorSettings />} />
+          <Route path="settings" element={<AccountSettings />} />
           <Route path="messages" element={<Messages />} />
         </Route>
 
         {/* HOD ROUTES (was ADMIN) */}
         <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={["HOD"]}><AdminDashboardLayout /></ProtectedRoute>}>
-          <Route index element={<Dashboard />} /> 
+          <Route index element={<div>Admin Overview</div>} /> 
           <Route path="staff-management" element={<StaffManagement />} />
-          <Route path="settings" element={<InstructorSettings />} />
+          <Route path="settings" element={<AccountSettings />} />
         </Route>
 
         {/* SUPER ADMIN ROUTES */}

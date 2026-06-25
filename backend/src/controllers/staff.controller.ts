@@ -407,3 +407,271 @@ export const verifyAssignment = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ detail: 'Internal error' });
   }
 };
+
+// ============================================================
+// ACADEMIC ENROLLMENT (Staff/HOD bulk enrolls students)
+// ============================================================
+
+export const getStudentsForEnrollment = async (req: AuthRequest, res: Response) => {
+  const { department, academic_year, semester, section } = req.query;
+
+  try {
+    const students = await prisma.users.findMany({
+      where: {
+        role: 'STUDENT',
+        student_profile: {
+          ...(department && { branch: department as string }),
+          ...(semester && { current_semester: parseInt(semester as string, 10) }),
+          ...(section && { section: section as string })
+        }
+      },
+      include: {
+        student_profile: true
+      }
+    });
+
+    return res.json(students);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const bulkEnrollStudents = async (req: AuthRequest, res: Response) => {
+  const courseId = parseInt(req.params.course_id as string, 10);
+  const { student_ids } = req.body;
+
+  if (!Array.isArray(student_ids) || student_ids.length === 0) {
+    return res.status(400).json({ detail: 'No students provided' });
+  }
+
+  try {
+    // Check if the staff member owns the course
+    const course = await prisma.courses.findUnique({
+      where: { id: courseId },
+      include: { course_batches: true }
+    });
+
+    if (!course) return res.status(404).json({ detail: 'Course not found' });
+    if (course.staff_id !== req.user.id && req.user.role !== 'HOD') {
+      return res.status(403).json({ detail: 'Unauthorized to manage enrollments for this course' });
+    }
+
+    // Find or create an active batch for this course based on the course's academic metadata
+    let targetBatch = course.course_batches.find(b => b.status === 'ACTIVE');
+    
+    if (!targetBatch) {
+      targetBatch = await prisma.course_batches.create({
+        data: {
+          course_id: course.id,
+          semester: course.semester,
+          section: course.sections && course.sections.length > 0 ? course.sections[0] : null,
+          year: new Date().getFullYear(),
+          status: 'ACTIVE'
+        }
+      });
+    }
+
+    // Enroll students to this batch, avoiding duplicates
+    let enrolledCount = 0;
+    for (const studentId of student_ids) {
+      const existing = await prisma.enrollments.findFirst({
+        where: { student_id: studentId, batch_id: targetBatch.id }
+      });
+
+      if (!existing) {
+        await prisma.enrollments.create({
+          data: {
+            student_id: studentId,
+            batch_id: targetBatch.id,
+            enrollment_date: new Date()
+          }
+        });
+        enrolledCount++;
+      }
+    }
+
+    return res.json({ message: `Successfully enrolled ${enrolledCount} students into the course batch.`, batch_id: targetBatch.id });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+// ============================================================
+// BATCH DETAIL MANAGEMENT (Delete batch, remove student, reports)
+// ============================================================
+
+/**
+ * DELETE /api/v1/staff/batches/:batch_id
+ * Deletes an entire batch. Enrollments cascade-delete via Prisma schema.
+ */
+export const deleteBatch = async (req: AuthRequest, res: Response) => {
+  const batchId = parseInt(req.params.batch_id as string, 10);
+
+  try {
+    const batch = await prisma.course_batches.findUnique({
+      where: { id: batchId },
+      include: { courses: true }
+    });
+
+    if (!batch) return res.status(404).json({ detail: 'Batch not found' });
+    if (batch.courses?.staff_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Unauthorized' });
+    }
+
+    await prisma.course_batches.delete({ where: { id: batchId } });
+
+    return res.json({ message: 'Batch deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+/**
+ * DELETE /api/v1/staff/batches/:batch_id/students/:student_id
+ * Removes a single student from a batch (deletes enrollment record).
+ */
+export const removeStudentFromBatch = async (req: AuthRequest, res: Response) => {
+  const batchId = parseInt(req.params.batch_id as string, 10);
+  const studentId = parseInt(req.params.student_id as string, 10);
+
+  try {
+    const batch = await prisma.course_batches.findUnique({
+      where: { id: batchId },
+      include: { courses: true }
+    });
+
+    if (!batch) return res.status(404).json({ detail: 'Batch not found' });
+    if (batch.courses?.staff_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Unauthorized' });
+    }
+
+    const enrollment = await prisma.enrollments.findFirst({
+      where: { batch_id: batchId, student_id: studentId }
+    });
+
+    if (!enrollment) return res.status(404).json({ detail: 'Enrollment not found' });
+
+    await prisma.enrollments.delete({ where: { id: enrollment.id } });
+
+    return res.json({ message: 'Student removed from batch' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+/**
+ * GET /api/v1/staff/batches/:batch_id/report
+ * Returns detailed per-student performance data for a batch:
+ * submissions count, lesson completion %, quiz scores.
+ */
+export const getBatchReport = async (req: AuthRequest, res: Response) => {
+  const batchId = parseInt(req.params.batch_id as string, 10);
+
+  try {
+    const batch = await prisma.course_batches.findUnique({
+      where: { id: batchId },
+      include: { courses: true, batch_content: true }
+    });
+
+    if (!batch) return res.status(404).json({ detail: 'Batch not found' });
+    if (batch.courses?.staff_id !== req.user.id) {
+      return res.status(403).json({ detail: 'Unauthorized' });
+    }
+
+    // Get all enrolled students with profiles
+    const enrollments = await prisma.enrollments.findMany({
+      where: { batch_id: batchId },
+      include: {
+        users: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            student_profile: true
+          }
+        }
+      }
+    });
+
+    const totalContent = batch.batch_content.length;
+    const contentIds = batch.batch_content.map(c => c.id);
+
+    // Also get course-level content (modules -> content_items)
+    const courseModules = await prisma.modules.findMany({
+      where: { course_id: batch.course_id || 0 },
+      include: { content_items: true }
+    });
+    const allContentItems = courseModules.flatMap(m => m.content_items);
+    const contentItemIds = allContentItems.map(c => c.id);
+    const totalCourseContent = allContentItems.length;
+
+    const report = await Promise.all(
+      enrollments.map(async (e) => {
+        if (!e.users) return null;
+
+        // Batch content completion
+        const batchCompleted = await prisma.lesson_progress.count({
+          where: {
+            user_id: e.users.id,
+            batch_content_id: { in: contentIds },
+            is_completed: true
+          }
+        });
+
+        // Course content completion (content_items via modules)
+        const courseCompleted = contentItemIds.length > 0
+          ? await prisma.lesson_progress.count({
+              where: {
+                user_id: e.users.id,
+                content_item_id: { in: contentItemIds },
+                is_completed: true
+              }
+            })
+          : 0;
+
+        const totalAll = totalContent + totalCourseContent;
+        const completedAll = batchCompleted + courseCompleted;
+
+        // Submissions count
+        const submissionCount = await prisma.submissions.count({
+          where: { user_id: e.users.id }
+        });
+
+        const verifiedCount = await prisma.submissions.count({
+          where: { user_id: e.users.id, status: 'Verified' }
+        });
+
+        return {
+          student_id: e.users.id,
+          full_name: e.users.full_name,
+          email: e.users.email,
+          department: e.users.student_profile?.branch || 'N/A',
+          semester: e.users.student_profile?.current_semester || 0,
+          section: e.users.student_profile?.section || 'N/A',
+          enrollment_year: e.users.student_profile?.enrollment_year || null,
+          total_submissions: submissionCount,
+          verified_submissions: verifiedCount,
+          content_completed: completedAll,
+          content_total: totalAll,
+          completion_percentage: totalAll > 0 ? Math.round((completedAll / totalAll) * 100) : 0
+        };
+      })
+    );
+
+    return res.json({
+      batch_id: batch.id,
+      course_title: batch.courses?.title,
+      semester: batch.semester,
+      section: batch.section,
+      year: batch.year,
+      report: report.filter(Boolean)
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};

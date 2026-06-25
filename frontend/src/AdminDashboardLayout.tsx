@@ -1,12 +1,36 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, LayoutDashboard, UserPlus, Settings } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BrandLogo from "./components/BrandLogo";
+import axios from "axios";
+import API_BASE_URL from "./config";
 
 const AdminDashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userData, setUserData] = useState({ name: "Loading...", email: "...", profile_picture: "" });
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      setUserData({
+        name: res.data.full_name || "HOD",
+        email: res.data.email || "",
+        profile_picture: res.data.profile_picture || ""
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    window.addEventListener("profileUpdated", fetchProfile);
+    return () => window.removeEventListener("profileUpdated", fetchProfile);
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -70,19 +94,23 @@ const AdminDashboardLayout = () => {
           <div className="flex items-center gap-4 relative">
              <button 
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="w-8 h-8 rounded-full bg-[#005EB8] text-white flex items-center justify-center font-bold text-sm hover:ring-2 hover:ring-[#005EB8]/30 transition-all border-none cursor-pointer focus:outline-none"
+                className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden bg-[#005EB8] text-white flex items-center justify-center font-bold text-sm hover:ring-2 hover:ring-[#005EB8]/30 transition-all cursor-pointer focus:outline-none"
              >
-                AD
+                {userData.profile_picture ? (
+                    <img src={userData.profile_picture.startsWith('http') ? userData.profile_picture : `${API_BASE_URL.replace('/api/v1', '')}${userData.profile_picture}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    userData.name.charAt(0).toUpperCase()
+                )}
              </button>
              
              {showProfileMenu && (
                <div className="absolute top-10 right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden py-1 z-50 animate-in fade-in slide-in-from-top-2">
                  <div className="px-4 py-2 border-b border-slate-100">
-                   <p className="text-sm font-bold text-slate-800 m-0">HOD User</p>
-                   <p className="text-xs text-slate-500 m-0">hod@stjosephs.edu</p>
+                   <p className="text-sm font-bold text-slate-800 m-0 truncate" title={userData.name}>{userData.name}</p>
+                   <p className="text-xs text-slate-500 m-0 truncate" title={userData.email}>{userData.email}</p>
                  </div>
                  <button onClick={() => { setShowProfileMenu(false); navigate("/admin-dashboard/settings"); }} className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors border-none bg-transparent cursor-pointer flex items-center gap-2">
-                   <Settings size={16} /> Settings
+                   <Settings size={16} /> Account Settings
                  </button>
                  <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-none bg-transparent cursor-pointer flex items-center gap-2">
                    <LogOut size={16} /> Logout

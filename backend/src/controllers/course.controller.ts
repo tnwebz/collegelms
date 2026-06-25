@@ -47,18 +47,22 @@ export const getCourseDetails = async (req: AuthRequest, res: Response) => {
 
 // POST /courses - create course blueprint (Staff)
 export const createCourse = async (req: AuthRequest, res: Response) => {
-  const { title, description, price, image_url, course_type, language } = req.body;
+  const { title, description, image_url, course_type, language, department, academic_year, semester, sections, academic_batch } = req.body;
   try {
     const course = await prisma.courses.create({
       data: {
         title,
         description,
-        price: price || 0,
         image_url,
         is_published: true,
         staff_id: req.user.id,
         course_type: course_type || 'regular',
-        language: language || 'en'
+        language: language || 'en',
+        department: department || null,
+        academic_year: academic_year || null,
+        semester: semester ? parseInt(semester, 10) : null,
+        sections: sections || [],
+        academic_batch: academic_batch || null
       }
     });
     return res.status(201).json(course);
@@ -71,7 +75,7 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
 // PATCH /courses/:course_id/details - update course blueprint
 export const updateCourseDetails = async (req: AuthRequest, res: Response) => {
   const courseId = parseInt(req.params.course_id as string, 10);
-  const { title, description, price, image_url, language } = req.body;
+  const { title, description, image_url, language } = req.body;
   try {
     const course = await prisma.courses.findUnique({ where: { id: courseId } });
     if (!course) return res.status(404).json({ detail: 'Course not found' });
@@ -82,7 +86,6 @@ export const updateCourseDetails = async (req: AuthRequest, res: Response) => {
       data: {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
-        ...(price !== undefined && { price }),
         ...(image_url !== undefined && { image_url }),
         ...(language !== undefined && { language })
       }
@@ -100,6 +103,7 @@ export const updateCourseDetails = async (req: AuthRequest, res: Response) => {
 
 // GET /my-courses - get student's enrolled batches (grouped by course)
 export const getMyCourses = async (req: AuthRequest, res: Response) => {
+  const reqSemester = req.query.semester ? parseInt(req.query.semester as string, 10) : null;
   try {
     const enrollments = await prisma.enrollments.findMany({
       where: { student_id: req.user.id },
@@ -110,7 +114,7 @@ export const getMyCourses = async (req: AuthRequest, res: Response) => {
       }
     });
     // Return the course info attached to the batch for each enrollment
-    const results = enrollments
+    let results = enrollments
       .filter((e: any) => e.course_batches)
       .map((e: any) => ({
         enrollment_id: e.id,
@@ -123,6 +127,11 @@ export const getMyCourses = async (req: AuthRequest, res: Response) => {
         },
         course: e.course_batches.courses
       }));
+      
+    if (reqSemester) {
+      results = results.filter((r: any) => r.course?.semester === reqSemester || r.batch?.semester === reqSemester);
+    }
+      
     return res.json(results);
   } catch (error) {
     console.error(error);
@@ -470,3 +479,72 @@ export const enrollInCourse = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ detail: 'Internal server error' });
   }
 };
+
+// ============================================================
+// COURSE BUILDER / MANAGEMENT (STAFF/HOD)
+// ============================================================
+
+export const reorderModules = async (req: AuthRequest, res: Response) => {
+  const courseId = parseInt(req.params.course_id as string, 10);
+  const { moduleIds } = req.body; // array of module IDs in new order
+  try {
+    for (let i = 0; i < moduleIds.length; i++) {
+      await prisma.modules.update({
+        where: { id: moduleIds[i] },
+        data: { order: i }
+      });
+    }
+    return res.json({ message: 'Modules reordered successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const getCourseStudents = async (req: AuthRequest, res: Response) => {
+  const courseId = parseInt(req.params.course_id as string, 10);
+  try {
+    const { batch_year, department, section, semester } = req.query;
+
+    const enrollments = await prisma.enrollments.findMany({
+      where: {
+        course_batches: { course_id: courseId },
+        users: { is_active: true }
+      },
+      include: {
+        users: { include: { student_profile: true } }
+      }
+    });
+
+    let students = enrollments
+      .filter((e: any) => e.users && e.users.role === 'STUDENT')
+      .map((e: any) => ({
+        enrollment_id: e.id,
+        ...e.users,
+      }));
+
+    if (batch_year) students = students.filter((s: any) => s.student_profile?.batch_year === batch_year);
+    if (department) students = students.filter((s: any) => s.student_profile?.branch === department);
+    if (section) students = students.filter((s: any) => s.student_profile?.section === section);
+    if (semester) students = students.filter((s: any) => s.student_profile?.current_semester === parseInt(semester as string, 10));
+
+    return res.json(students);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+
+export const removeCourseStudent = async (req: AuthRequest, res: Response) => {
+  const enrollmentId = parseInt(req.params.student_id as string, 10);
+  try {
+    await prisma.enrollments.delete({
+      where: { id: enrollmentId }
+    });
+    return res.json({ message: 'Student removed from course successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ detail: 'Internal server error' });
+  }
+};
+

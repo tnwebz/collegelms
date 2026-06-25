@@ -2,17 +2,17 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from './config';
-import { Save, Image as ImageIcon, IndianRupee, ArrowLeft, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Save, Image as ImageIcon, ArrowLeft, Clock, CheckCircle, AlertCircle, X, Building, Calendar, Hash, Users, GraduationCap, BookOpen } from "lucide-react";
 
 const CreateCourse = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: "", description: "", price: "", image_url: "", duration: "",
-    course_type: "standard", language: "python"
+    title: "", description: "", image_url: "", duration: "",
+    course_type: "standard", language: "python",
+    department: "Computer Science", academic_year: "2023", semester: "1", sections: "", academic_batch: ""
   });
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
-  const [isFree, setIsFree] = useState(false);
 
   const triggerToast = (message: string, type: "success" | "error") => {
     setToast({ show: true, message, type: type as "success" | "error" });
@@ -31,10 +31,14 @@ const CreateCourse = () => {
     const payload = {
       title: formData.title,
       description: finalDescription,
-      price: isFree ? 0 : parseInt(formData.price),
       image_url: formData.image_url,
       course_type: formData.course_type,
-      language: formData.course_type === "coding" ? formData.language : null
+      language: formData.course_type === "coding" ? formData.language : null,
+      department: formData.department,
+      academic_year: formData.academic_year,
+      semester: parseInt(formData.semester),
+      sections: formData.sections.split(',').map(s => s.trim()).filter(Boolean),
+      academic_batch: formData.academic_batch
     };
 
     try {
@@ -170,45 +174,63 @@ const CreateCourse = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Price (INR)</label>
-              <div className="relative">
-                <IndianRupee size={16} className={`absolute left-3.5 top-3.5 ${isFree ? "text-slate-300" : "text-slate-400"}`} strokeWidth={1.5} />
-                <input
-                  type="number"
-                  placeholder="999"
-                  value={isFree ? 0 : formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  required={!isFree}
-                  disabled={isFree}
-                  className={`w-full p-3 pl-10 text-sm rounded-lg border outline-none transition-all ${isFree ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 border-slate-300 focus:border-[#005EB8] focus:ring-1 focus:ring-[#005EB8]"}`}
-                />
+          <div className="bg-slate-100 p-5 md:p-6 rounded-xl">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-4">Academic Classification</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Department</label>
+                <div className="relative">
+                  <Building size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <select value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] outline-none transition-all appearance-none bg-white">
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Mechanical">Mechanical</option>
+                  </select>
+                </div>
               </div>
-              <div className="mt-3 flex items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  id="freeCourse"
-                  checked={isFree}
-                  onChange={(e) => setIsFree(e.target.checked)}
-                  className="w-4 h-4 cursor-pointer accent-[#005EB8]"
-                />
-                <label htmlFor="freeCourse" className="text-xs font-bold text-slate-500 cursor-pointer select-none">Set as <strong className="text-slate-700">Free Course</strong></label>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Academic Year</label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <select value={formData.academic_year} onChange={(e) => setFormData({ ...formData, academic_year: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] outline-none transition-all appearance-none bg-white">
+                    <option value="2023">2023-2024</option>
+                    <option value="2024">2024-2025</option>
+                    <option value="2025">2025-2026</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Semester</label>
+                <div className="relative">
+                  <Hash size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <select value={formData.semester} onChange={(e) => setFormData({ ...formData, semester: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] outline-none transition-all appearance-none bg-white">
+                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Section(s)</label>
+                <div className="relative">
+                  <Users size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <input type="text" placeholder="A, B, C (Comma separated)" value={formData.sections} onChange={(e) => setFormData({ ...formData, sections: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] outline-none transition-all" />
+                </div>
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Academic Batch (Optional)</label>
+                <div className="relative">
+                  <GraduationCap size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <input type="text" placeholder="e.g. Batch 2027" value={formData.academic_batch} onChange={(e) => setFormData({ ...formData, academic_batch: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] outline-none transition-all" />
+                </div>
               </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Thumbnail URL</label>
-              <div className="relative">
-                <ImageIcon size={16} className="absolute left-3.5 top-3.5 text-slate-400" strokeWidth={1.5} />
-                <input
-                  type="text"
-                  placeholder="https://image-link.com/photo.jpg"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] focus:ring-1 focus:ring-[#005EB8] outline-none transition-all"
-                />
-              </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Thumbnail URL</label>
+            <div className="relative">
+              <ImageIcon size={16} className="absolute left-3.5 top-3.5 text-slate-400" strokeWidth={1.5} />
+              <input type="text" placeholder="https://image-link.com/photo.jpg" value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} className="w-full p-3 pl-10 text-sm rounded-lg border border-slate-300 focus:border-[#005EB8] focus:ring-1 focus:ring-[#005EB8] outline-none transition-all" />
             </div>
           </div>
 
